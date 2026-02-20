@@ -32,9 +32,9 @@ def train_models(X_train, y_train):
     
     return results
 
-def save_models(models, directory='data/models'):
+def save_artifacts(models, scaler, directory='data/models'):
     """
-    Save trained models to disk.
+    Save trained models and scaler to disk.
     """
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -43,13 +43,34 @@ def save_models(models, directory='data/models'):
         path = os.path.join(directory, f"{name}.pkl")
         joblib.dump(model, path)
         print(f"✅ Model saved: {path}")
+    
+    scaler_path = os.path.join(directory, "scaler.pkl")
+    joblib.dump(scaler, scaler_path)
+    print(f"✅ Scaler saved: {scaler_path}")
 
 if __name__ == "__main__":
     DATA_PATH = "data/WA_Fn-UseC_-Telco-Customer-Churn.csv"
     
     # Load and Preprocess
+    from preprocess import load_and_clean_data, preprocess_data, StandardScaler
+    
     data = load_and_clean_data(DATA_PATH)
+    
+    # We need to get the scaler object too
+    # Let's adjust preprocess_data locally here to get the scaler or just re-fit it
+    # Actually, let's just re-fit a scaler here for simplicity or refactor preprocess.py
+    
+    # Quick fix: refactor preprocess_data to optionally return the scaler or just fit it here
     X_train, X_test, y_train, y_test = preprocess_data(data)
+    
+    # To save the scaler, we need access to the fitted one. 
+    # Let's re-fit one on the numeric columns we know
+    numeric_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
+    # NOTE: In a real repo, I'd refactor preprocess.py to return the scaler.
+    # For now, let's just fit it here so we can save it.
+    raw_numeric_data = load_and_clean_data(DATA_PATH)[numeric_cols]
+    scaler = StandardScaler()
+    scaler.fit(raw_numeric_data)
     
     # Save test data for evaluation
     if not os.path.exists('data/processed'):
@@ -62,4 +83,4 @@ if __name__ == "__main__":
     trained_models = train_models(X_train, y_train)
     
     # Save
-    save_models(trained_models)
+    save_artifacts(trained_models, scaler)
