@@ -2,8 +2,10 @@ from preprocess import load_and_clean_data, preprocess_data
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import joblib
 import os
+import json
 
 def train_models(X_train, y_train):
     """
@@ -13,28 +15,47 @@ def train_models(X_train, y_train):
     
     # 1. Logistic Regression
     print("Training Logistic Regression...")
-    lr_params = {'C': [0.01, 0.1, 1, 10, 100]}
+    lr_params = {'C': [0.01, 0.1, 1, 10]}
     lr_grid = GridSearchCV(LogisticRegression(max_iter=1000), lr_params, cv=5, scoring='f1')
     lr_grid.fit(X_train, y_train)
     results['logistic_regression'] = lr_grid.best_estimator_
-    print(f"Best LR Params: {lr_grid.best_params_}")
     
     # 2. Decision Tree
     print("Training Decision Tree...")
     dt_params = {
-        'max_depth': [3, 5, 10, None],
+        'max_depth': [3, 5, 7, 10],
         'min_samples_split': [2, 5, 10]
     }
     dt_grid = GridSearchCV(DecisionTreeClassifier(random_state=42), dt_params, cv=5, scoring='f1')
     dt_grid.fit(X_train, y_train)
     results['decision_tree'] = dt_grid.best_estimator_
-    print(f"Best DT Params: {dt_grid.best_params_}")
     
     return results
 
-def save_artifacts(models, scaler, directory='data/models'):
+def evaluate_and_save_metrics(models, X_test, y_test, directory='data/results'):
     """
-    Save trained models and scaler to disk.
+    Evaluate models and save metrics to JSON.
+    """
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+        
+    metrics_report = {}
+    for name, model in models.items():
+        y_pred = model.predict(X_test)
+        metrics_report[name] = {
+            'accuracy': round(accuracy_score(y_test, y_pred), 4),
+            'precision': round(precision_score(y_test, y_pred), 4),
+            'recall': round(recall_score(y_test, y_pred), 4),
+            'f1': round(f1_score(y_test, y_pred), 4)
+        }
+    
+    with open(os.path.join(directory, 'metrics.json'), 'w') as f:
+        json.dump(metrics_report, f, indent=4)
+    print(f"✅ Metrics saved to {directory}/metrics.json")
+
+def save_artifacts(models, scaler, feature_names, directory='data/models'):
+    """
+    Save trained models, scaler, and features to disk.
     """
     if not os.path.exists(directory):
         os.makedirs(directory)
@@ -44,43 +65,28 @@ def save_artifacts(models, scaler, directory='data/models'):
         joblib.dump(model, path)
         print(f"✅ Model saved: {path}")
     
-    scaler_path = os.path.join(directory, "scaler.pkl")
-    joblib.dump(scaler, scaler_path)
-    print(f"✅ Scaler saved: {scaler_path}")
+    joblib.dump(scaler, os.path.join(directory, "scaler.pkl"))
+    joblib.dump(feature_names, os.path.join(directory, "feature_names.pkl"))
+    print("✅ Preprocessing artifacts saved")
 
 if __name__ == "__main__":
     DATA_PATH = "data/WA_Fn-UseC_-Telco-Customer-Churn.csv"
     
-    # Load and Preprocess
-    from preprocess import load_and_clean_data, preprocess_data, StandardScaler
-    
+    # 1. Load and Preprocess
     data = load_and_clean_data(DATA_PATH)
+    X_train, X_test, y_train, y_test, scaler, feature_names = preprocess_data(data)
     
-    # We need to get the scaler object too
-    # Let's adjust preprocess_data locally here to get the scaler or just re-fit it
-    # Actually, let's just re-fit a scaler here for simplicity or refactor preprocess.py
+    # 2. Train
+    models = train_models(X_train, y_train)
     
-    # Quick fix: refactor preprocess_data to optionally return the scaler or just fit it here
-    X_train, X_test, y_train, y_test = preprocess_data(data)
+    # 3. Evaluate and Save Metrics
+    evaluate_and_save_metrics(models, X_test, y_test)
     
-    # To save the scaler, we need access to the fitted one. 
-    # Let's re-fit one on the numeric columns we know
-    numeric_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
-    # NOTE: In a real repo, I'd refactor preprocess.py to return the scaler.
-    # For now, let's just fit it here so we can save it.
-    raw_numeric_data = load_and_clean_data(DATA_PATH)[numeric_cols]
-    scaler = StandardScaler()
-    scaler.fit(raw_numeric_data)
+    # 4. Save Models and Preprocessing Artifacts
+    save_artifacts(models, scaler, feature_names)
     
-    # Save test data for evaluation
+    # 5. Save test data for potential manual evaluation
     if not os.path.exists('data/processed'):
         os.makedirs('data/processed')
     X_test.to_csv('data/processed/X_test.csv', index=False)
     y_test.to_csv('data/processed/y_test.csv', index=False)
-    print("✅ Test data saved for evaluation")
-    
-    # Train
-    trained_models = train_models(X_train, y_train)
-    
-    # Save
-    save_artifacts(trained_models, scaler)

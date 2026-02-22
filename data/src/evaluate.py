@@ -14,7 +14,7 @@ def evaluate_models(models_dir, X_test_path, y_test_path):
     
     results = {}
     
-    model_files = [f for f in os.listdir(models_dir) if f.endswith('.pkl')]
+    model_files = [f for f in os.listdir(models_dir) if f in ['logistic_regression.pkl', 'decision_tree.pkl']]
     
     for model_file in model_files:
         model_name = model_file.replace('.pkl', '')

@@ -3,175 +3,214 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
+import json
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+# Import preprocessing logic
+import sys
+# Add src to path if needed
+sys.path.append(os.path.join(os.getcwd(), 'data/src'))
+from preprocess import preprocess_data
+
 # Page configuration
 st.set_page_config(
-    page_title="Customer Churn Predictor",
-    page_icon="📊",
+    page_title="ChurnGuard | AI Predictor",
+    page_icon="🛡️",
     layout="wide"
 )
 
-# Load Models and Scaler
+# Custom CSS for a premium feel
+st.markdown("""
+<style>
+    .main {
+        background-color: #f8f9fa;
+    }
+    .stButton>button {
+        width: 100%;
+        border-radius: 5px;
+        height: 3em;
+        background-color: #007bff;
+        color: white;
+    }
+    .stMetric {
+        background-color: white;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .risk-high {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    .risk-low {
+        color: #28a745;
+        font-weight: bold;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Load Artifacts
 @st.cache_resource
-def load_artifacts():
-    # Adjusted paths for running from project root: streamlit run data/app/app.py
-    model_path = "data/models/logistic_regression.pkl"
-    scaler_path = "data/models/scaler.pkl"
+def load_all_artifacts():
+    base_path = "data/models"
+    metrics_path = "data/results/metrics.json"
     
-    # Fallback paths if run from inside data/app/
-    if not os.path.exists(model_path):
-        model_path = "../models/logistic_regression.pkl"
-        scaler_path = "../models/scaler.pkl"
+    # Load Models
+    lr_model = joblib.load(os.path.join(base_path, "logistic_regression.pkl"))
+    dt_model = joblib.load(os.path.join(base_path, "decision_tree.pkl"))
+    
+    # Load Preprocessing
+    scaler = joblib.load(os.path.join(base_path, "scaler.pkl"))
+    feature_names = joblib.load(os.path.join(base_path, "feature_names.pkl"))
+    
+    # Load Metrics
+    with open(metrics_path, 'r') as f:
+        metrics = json.load(f)
         
-    model = joblib.load(model_path)
-    scaler = joblib.load(scaler_path)
-    return model, scaler
+    return {"lr": lr_model, "dt": dt_model}, scaler, feature_names, metrics
 
 try:
-    model, scaler = load_artifacts()
+    models, scaler, feature_names, metrics = load_all_artifacts()
 except Exception as e:
-    st.error(f"Error loading models: {e}. Please ensure you've run the training script.")
+    st.error(f"⚠️ Error loading system artifacts: {e}. Please run the training pipeline first.")
     st.stop()
 
-# Title and Description
-st.title("🚀 Telco Customer Churn Prediction")
-st.markdown("""
-Predict whether a customer will leave based on their demographics and service usage. 
-This app uses a **Logistic Regression** model (80% Accuracy).
-""")
+# --- Sidebar ---
+st.sidebar.image("https://cdn-icons-png.flaticon.com/512/3135/3135715.png", width=100)
+st.sidebar.title("ChurnGuard AI")
+st.sidebar.markdown("---")
 
-# Sidebar for User Inputs
-st.sidebar.header("👤 Customer Information")
+selected_model_key = st.sidebar.radio(
+    "Select Prediction Model",
+    ["Logistic Regression", "Decision Tree"],
+    help="Logistic Regression offers better probability calibration, while Decision Trees are highly interpretable."
+)
+model_id = "logistic_regression" if selected_model_key == "Logistic Regression" else "decision_tree"
+current_model = models["lr"] if model_id == "logistic_regression" else models["dt"]
 
-def user_input_features():
-    # Categorical Inputs
-    gender = st.sidebar.selectbox("Gender", ["Male", "Female"])
-    senior_citizen = st.sidebar.selectbox("Senior Citizen", ["No", "Yes"])
-    partner = st.sidebar.selectbox("Partner", ["No", "Yes"])
-    dependents = st.sidebar.selectbox("Dependents", ["No", "Yes"])
-    
-    st.sidebar.header("📞 Service Usage")
-    phone_service = st.sidebar.selectbox("Phone Service", ["No", "Yes"])
-    multiple_lines = st.sidebar.selectbox("Multiple Lines", ["No", "Yes", "No phone service"])
-    internet_service = st.sidebar.selectbox("Internet Service", ["DSL", "Fiber optic", "No"])
-    online_security = st.sidebar.selectbox("Online Security", ["No", "Yes", "No internet service"])
-    online_backup = st.sidebar.selectbox("Online Backup", ["No", "Yes", "No internet service"])
-    device_protection = st.sidebar.selectbox("Device Protection", ["No", "Yes", "No internet service"])
-    tech_support = st.sidebar.selectbox("Tech Support", ["No", "Yes", "No internet service"])
-    streaming_tv = st.sidebar.selectbox("Streaming TV", ["No", "Yes", "No internet service"])
-    streaming_movies = st.sidebar.selectbox("Streaming Movies", ["No", "Yes", "No internet service"])
-    
-    st.sidebar.header("💳 Billing & Contract")
-    contract = st.sidebar.selectbox("Contract", ["Month-to-month", "One year", "Two year"])
-    paperless_billing = st.sidebar.selectbox("Paperless Billing", ["No", "Yes"])
-    payment_method = st.sidebar.selectbox("Payment Method", [
-        "Electronic check", "Mailed check", "Bank transfer (automatic)", "Credit card (automatic)"
-    ])
-    
-    tenure = st.sidebar.slider("Tenure (months)", 0, 72, 12)
-    monthly_charges = st.sidebar.slider("Monthly Charges ($)", 18.0, 120.0, 70.0)
-    total_charges = st.sidebar.number_input("Total Charges ($)", min_value=0.0, value=tenure * monthly_charges)
-    
-    data = {
-        'gender': gender,
-        'SeniorCitizen': 1 if senior_citizen == "Yes" else 0,
-        'Partner': partner,
-        'Dependents': dependents,
-        'tenure': tenure,
-        'PhoneService': phone_service,
-        'MultipleLines': multiple_lines,
-        'InternetService': internet_service,
-        'OnlineSecurity': online_security,
-        'OnlineBackup': online_backup,
-        'DeviceProtection': device_protection,
-        'TechSupport': tech_support,
-        'StreamingTV': streaming_tv,
-        'StreamingMovies': streaming_movies,
-        'Contract': contract,
-        'PaperlessBilling': paperless_billing,
-        'PaymentMethod': payment_method,
-        'MonthlyCharges': monthly_charges,
-        'TotalCharges': total_charges
-    }
-    return pd.DataFrame([data])
+# --- Main Interface ---
+st.title("🛡️ Customer Retention Dashboard")
+st.markdown(f"Currently using: **{selected_model_key}**")
 
-input_df = user_input_features()
+tab1, tab2 = st.tabs(["🔮 Predict Churn", "📊 Model Performance"])
 
-# Display Input Data
-st.subheader("Selected Parameters")
-st.write(input_df)
-
-# Preprocessing for Prediction
-def preprocess_input(df, scaler, model_columns):
-    # 1. Scale Numeric
-    numeric_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
-    df[numeric_cols] = scaler.transform(df[numeric_cols])
-    
-    # 2. Categorical Encoding (dummies)
-    # We must match the column order and names of the training data
-    df_encoded = pd.get_dummies(df)
-    
-    # Reindex to match model expectation (add missing columns with 0)
-    for col in model_columns:
-        if col not in df_encoded.columns:
-            df_encoded[col] = 0
-            
-    # Ensure correct order
-    df_encoded = df_encoded[model_columns]
-    return df_encoded
-
-# Get the columns from the model
-# (Logistic Regression coefficients have names if we use model.feature_names_in_)
-try:
-    model_columns = model.feature_names_in_
-    processed_input = preprocess_input(input_df.copy(), scaler, model_columns)
-    
-    # Prediction
-    prediction_prob = model.predict_proba(processed_input)[0, 1]
-    prediction = model.predict(processed_input)[0]
-    
-    # Main Prediction Display
-    st.divider()
-    col1, col2 = st.columns([1, 1])
+with tab1:
+    col1, col2 = st.columns([1, 2])
     
     with col1:
-        st.subheader("Prediction")
-        if prediction == 1:
-            st.error("🚨 **High Risk of Churn!**")
-        else:
-            st.success("✅ **Low Risk of Churn**")
-            
-        st.metric(label="Churn Probability", value=f"{prediction_prob*100:.1f}%")
+        st.subheader("👤 Customer Profile")
+        with st.expander("Demographics", expanded=True):
+            gender = st.selectbox("Gender", ["Male", "Female"])
+            senior = st.selectbox("Senior Citizen", ["No", "Yes"])
+            partner = st.selectbox("Partner", ["No", "Yes"])
+            dependents = st.selectbox("Dependents", ["No", "Yes"])
+            tenure = st.slider("Tenure (months)", 0, 72, 12)
+
+        with st.expander("Services"):
+            phone = st.selectbox("Phone Service", ["No", "Yes"])
+            multiple = st.selectbox("Multiple Lines", ["No", "Yes", "No phone service"])
+            internet = st.selectbox("Internet Service", ["DSL", "Fiber optic", "No"])
+            security = st.selectbox("Online Security", ["No", "Yes", "No internet service"])
+            backup = st.selectbox("Online Backup", ["No", "Yes", "No internet service"])
+            protection = st.selectbox("Device Protection", ["No", "Yes", "No internet service"])
+            support = st.selectbox("Tech Support", ["No", "Yes", "No internet service"])
+            tv = st.selectbox("Streaming TV", ["No", "Yes", "No internet service"])
+            movies = st.selectbox("Streaming Movies", ["No", "Yes", "No internet service"])
+
+        with st.expander("Billing & Contract"):
+            contract = st.selectbox("Contract", ["Month-to-month", "One year", "Two year"])
+            paperless = st.selectbox("Paperless Billing", ["No", "Yes"])
+            payment = st.selectbox("Payment Method", [
+                "Electronic check", "Mailed check", "Bank transfer (automatic)", "Credit card (automatic)"
+            ])
+            monthly = st.number_input("Monthly Charges ($)", 18.0, 120.0, 70.0)
+            total = st.number_input("Total Charges ($)", 0.0, 9000.0, float(tenure * monthly))
 
     with col2:
-        st.subheader("Risk Insights")
-        if prediction_prob > 0.7:
-            st.warning("Customer is likely to leave in the next 1-2 months.")
-        elif prediction_prob > 0.4:
-            st.info("Customer shows signs of dissatisfaction.")
+        st.subheader("📈 Prediction Results")
+        
+        # Prepare Input
+        input_data = {
+            'gender': gender, 'SeniorCitizen': 1 if senior == "Yes" else 0,
+            'Partner': partner, 'Dependents': dependents, 'tenure': tenure,
+            'PhoneService': phone, 'MultipleLines': multiple, 'InternetService': internet,
+            'OnlineSecurity': security, 'OnlineBackup': backup, 'DeviceProtection': protection,
+            'TechSupport': support, 'StreamingTV': tv, 'StreamingMovies': movies,
+            'Contract': contract, 'PaperlessBilling': paperless, 'PaymentMethod': payment,
+            'MonthlyCharges': monthly, 'TotalCharges': total
+        }
+        input_df = pd.DataFrame([input_data])
+        
+        # Preprocess
+        processed_input = preprocess_data(input_df, is_training=False, scaler=scaler, feature_cols=feature_names)
+        
+        # Predict
+        prob = current_model.predict_proba(processed_input)[0, 1]
+        risk = "HIGH" if prob > 0.5 else "LOW"
+        
+        # Display
+        res_col1, res_col2 = st.columns(2)
+        with res_col1:
+            st.metric("Churn Probability", f"{prob*100:.1f}%")
+        with res_col2:
+            color = "#dc3545" if risk == "HIGH" else "#28a745"
+            st.markdown(f"#### Risk Level: <span style='color:{color}'>{risk}</span>", unsafe_allow_html=True)
+            
+        st.progress(prob)
+        
+        # Recommendations
+        st.write("---")
+        st.subheader("💡 Key Insights & Actions")
+        if risk == "HIGH":
+            st.warning("🚨 **Retention Alert:** This customer is likely to leave.")
+            st.info("**Suggested Actions:**\n- Provide a personalized discount on Monthly Charges.\n- Offer a 1-year contract extension.\n- Check for technical issues in their service region.")
         else:
-            st.success("Customer loyalty seems strong.")
+            st.success("✅ **Loyalty Confirmed:** Customer is unlikely to churn.")
+            st.write("**Suggested Actions:**\n- Upsell new streaming features.\n- Ask for a referral or review.")
 
-    # Phase 5: Feature Importance Visualization
-    st.divider()
-    st.subheader("📈 Key Churn Drivers (Global)")
-    
-    # Extract importance from LR coefficients
-    importance = pd.DataFrame({
-        'Feature': model_columns,
-        'Importance': model.coef_[0]
-    }).sort_values(by='Importance', ascending=False)
-    
-    # Plotting
-    fig, ax = plt.subplots(figsize=(10, 6))
-    sns.barplot(data=importance.head(10), x='Importance', y='Feature', palette='RdYlGn_r')
-    plt.title("Top Factors Increasing Churn Risk")
-    st.pyplot(fig)
-    
-except Exception as e:
-    st.error(f"Error during prediction: {e}")
+        # Feature Importance for this model
+        st.write("---")
+        st.subheader("📊 Model Feature Importance (Global)")
+        if model_id == "logistic_regression":
+            importance = pd.DataFrame({'Feature': feature_names, 'Importance': current_model.coef_[0]})
+        else:
+            importance = pd.DataFrame({'Feature': feature_names, 'Importance': current_model.feature_importances_})
+        
+        importance = importance.sort_values(by='Importance', ascending=False).head(10)
+        fig, ax = plt.subplots(figsize=(8, 4))
+        sns.barplot(data=importance, x='Importance', y='Feature', palette='viridis')
+        st.pyplot(fig)
 
-st.markdown("---")
-st.caption("Developed by Antigravity | Customer Churn ML Project Milestone 1")
+with tab2:
+    st.subheader(f"Performance Metrics: {selected_model_key}")
+    m = metrics[model_id]
+    
+    m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+    m_col1.metric("Accuracy", f"{m['accuracy']*100:.1f}%")
+    m_col2.metric("Precision", f"{m['precision']*100:.1f}%")
+    m_col3.metric("Recall", f"{m['recall']*100:.1f}%")
+    m_col4.metric("F1-Score", f"{m['f1']*100:.1f}%")
+    
+    st.write("---")
+    st.subheader("Visual Analysis")
+    
+    v_col1, v_col2 = st.columns(2)
+    with v_col1:
+        st.write("**Confusion Matrix**")
+        cm_path = f"reports/figures/cm_{model_id}.png"
+        if os.path.exists(cm_path):
+            st.image(cm_path)
+        else:
+            st.info("Confusion matrix visual not found.")
+            
+    with v_col2:
+        st.write("**ROC Curves (All Models)**")
+        roc_path = "reports/figures/roc_curves.png"
+        if os.path.exists(roc_path):
+            st.image(roc_path)
+        else:
+            st.info("ROC Curve visual not found.")
+
+st.sidebar.markdown("---")
+st.sidebar.caption("© 2026 ChurnGuard AI | Milestone 1")

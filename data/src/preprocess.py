@@ -20,47 +20,61 @@ def load_and_clean_data(file_path):
     
     return df
 
-def preprocess_data(df):
+def preprocess_data(df, is_training=True, scaler=None, feature_cols=None):
     """
     Perform encoding, scaling and splitting.
+    If is_training is False, use provided scaler and feature_cols.
     """
-    # 1. Encode Target variable (Churn)
-    le = LabelEncoder()
-    df['Churn'] = le.fit_transform(df['Churn']) # No=0, Yes=1
+    # 1. Encode Target variable (Churn) if training
+    if is_training:
+        le = LabelEncoder()
+        df['Churn'] = le.fit_transform(df['Churn']) # No=0, Yes=1
     
-    # 2. Identiy Numeric and Categorical columns
+    # 2. Identify Numeric and Categorical columns
     numeric_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
     categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
+    if 'customerID' in categorical_cols: categorical_cols.remove('customerID')
     
     # 3. Scaling Numeric features
-    scaler = StandardScaler()
-    df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
+    if is_training:
+        scaler = StandardScaler()
+        df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
+    else:
+        df[numeric_cols] = scaler.transform(df[numeric_cols])
     
-    # 4. One-Hot Encoding for categorical features
+    # 4. One-Hot Encoding
     df = pd.get_dummies(df, columns=categorical_cols, drop_first=True)
     
-    # 5. Split into X and y
-    X = df.drop('Churn', axis=1)
-    y = df['Churn']
-    
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
-    
-    return X_train, X_test, y_train, y_test
+    if is_training:
+        # Save feature columns (excluding target)
+        feature_cols = df.drop('Churn', axis=1).columns.tolist()
+        X = df.drop('Churn', axis=1)
+        y = df['Churn']
+        
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=y
+        )
+        return X_train, X_test, y_train, y_test, scaler, feature_cols
+    else:
+        # Align features for inference
+        for col in feature_cols:
+            if col not in df.columns:
+                df[col] = 0
+        df = df[feature_cols]
+        return df
 
 if __name__ == "__main__":
-    # Test script - usage from project root: python data/src/preprocess.py
+    # Test script
     import os
     DATA_PATH = "data/WA_Fn-UseC_-Telco-Customer-Churn.csv"
     if not os.path.exists(DATA_PATH):
-        # Fallback for running from inside data/src/
         DATA_PATH = "../WA_Fn-UseC_-Telco-Customer-Churn.csv"
+        
     try:
         data = load_and_clean_data(DATA_PATH)
-        X_train, X_test, y_train, y_test = preprocess_data(data)
+        X_train, X_test, y_train, y_test, scaler, feature_names = preprocess_data(data)
         print("✅ Preprocessing Successful")
         print(f"X_train shape: {X_train.shape}")
-        print(f"y_train distribution: \n{y_train.value_counts(normalize=True)}")
+        print(f"Features: {len(feature_names)}")
     except Exception as e:
         print(f"❌ Error: {e}")
