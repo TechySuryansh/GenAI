@@ -10,9 +10,15 @@ import seaborn as sns
 # Import preprocessing logic
 import sys
 # Add src to path if needed
-sys.path.append(os.path.join(os.getcwd(), 'data/src'))
-from preprocess import preprocess_data
+# sys.path.append(os.path.join(os.getcwd(), 'data/src'))
+# from preprocess import preprocess_data
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SRC_PATH = os.path.join(BASE_DIR, "src")
 
+import sys
+sys.path.append(SRC_PATH)
+
+from preprocess import preprocess_data
 # Page configuration
 st.set_page_config(
     page_title="ChurnGuard | AI Predictor",
@@ -37,7 +43,14 @@ st.markdown("""
         background-color: white;
         padding: 15px;
         border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    /* Target labels and values specifically for visibility */
+    [data-testid="stMetricLabel"] > div {
+        color: #4b4b4b !important;
+    }
+    [data-testid="stMetricValue"] > div {
+        color: #1a1a1a !important;
     }
     .risk-high {
         color: #dc3545;
