@@ -38,7 +38,7 @@ def evaluate_models(models_dir, X_test_path, y_test_path):
     
     return results, y_test
 
-def plot_visualizations(results, y_test, output_dir='reports/figures'):
+def plot_visualizations(results, y_test, output_dir='reports'):
     """
     Plot confusion matrices and ROC curves.
     """
@@ -67,15 +67,15 @@ def plot_visualizations(results, y_test, output_dir='reports/figures'):
     plt.legend()
     plt.savefig(os.path.join(output_dir, 'roc_curves.png'))
     plt.close()
-    print(f"✅ Visualizations saved to {output_dir}")
+    print(f"Visualizations saved to {output_dir}")
 
 if __name__ == "__main__":
-    MODELS_DIR = "data/models"
-    X_TEST = "data/processed/X_test.csv"
-    Y_TEST = "data/processed/y_test.csv"
+    MODELS_DIR = "notebooks/models"
+    X_TEST = "results/X_test.csv"
+    Y_TEST = "results/y_test.csv"
     
     try:
         eval_results, y_true = evaluate_models(MODELS_DIR, X_TEST, Y_TEST)
         plot_visualizations(eval_results, y_true)
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")

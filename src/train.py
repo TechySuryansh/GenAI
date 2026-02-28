@@ -32,7 +32,7 @@ def train_models(X_train, y_train):
     
     return results
 
-def evaluate_and_save_metrics(models, X_test, y_test, directory='data/results'):
+def evaluate_and_save_metrics(models, X_test, y_test, directory='result'):
     """
     Evaluate models and save metrics to JSON.
     """
@@ -51,9 +51,9 @@ def evaluate_and_save_metrics(models, X_test, y_test, directory='data/results'):
     
     with open(os.path.join(directory, 'metrics.json'), 'w') as f:
         json.dump(metrics_report, f, indent=4)
-    print(f"✅ Metrics saved to {directory}/metrics.json")
+    print(f"Metrics saved to {directory}/metrics.json")
 
-def save_artifacts(models, scaler, feature_names, directory='data/models'):
+def save_artifacts(models, scaler, feature_names, directory='notebooks/models'):
     """
     Save trained models, scaler, and features to disk.
     """
@@ -63,11 +63,11 @@ def save_artifacts(models, scaler, feature_names, directory='data/models'):
     for name, model in models.items():
         path = os.path.join(directory, f"{name}.pkl")
         joblib.dump(model, path)
-        print(f"✅ Model saved: {path}")
+        print(f"Model saved: {path}")
     
     joblib.dump(scaler, os.path.join(directory, "scaler.pkl"))
     joblib.dump(feature_names, os.path.join(directory, "feature_names.pkl"))
-    print("✅ Preprocessing artifacts saved")
+    print("Preprocessing artifacts saved")
 
 if __name__ == "__main__":
     DATA_PATH = "data/WA_Fn-UseC_-Telco-Customer-Churn.csv"
@@ -80,13 +80,13 @@ if __name__ == "__main__":
     models = train_models(X_train, y_train)
     
     # 3. Evaluate and Save Metrics
-    evaluate_and_save_metrics(models, X_test, y_test)
+    evaluate_and_save_metrics(models, X_test, y_test, directory='results')
     
     # 4. Save Models and Preprocessing Artifacts
     save_artifacts(models, scaler, feature_names)
     
     # 5. Save test data for potential manual evaluation
-    if not os.path.exists('data/processed'):
-        os.makedirs('data/processed')
-    X_test.to_csv('data/processed/X_test.csv', index=False)
-    y_test.to_csv('data/processed/y_test.csv', index=False)
+    if not os.path.exists('results'):
+        os.makedirs('results')
+    X_test.to_csv('results/X_test.csv', index=False)
+    y_test.to_csv('results/y_test.csv', index=False)

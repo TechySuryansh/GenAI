@@ -1,0 +1,14 @@
+{
+    "logistic_regression": {
+        "accuracy": 0.797,
+        "precision": 0.6375,
+        "recall": 0.5455,
+        "f1": 0.5879
+    },
+    "decision_tree": {
+        "accuracy": 0.7949,
+        "precision": 0.6341,
+        "recall": 0.5374,
+        "f1": 0.5818
+    }
+}

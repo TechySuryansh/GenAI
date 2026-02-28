@@ -12,11 +12,8 @@ def load_and_clean_data(file_path):
     # 1. Drop customerID (non-predictive)
     df = df.drop('customerID', axis=1)
     
-    # 2. Convert TotalCharges to numeric
-    df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
-    
-    # 3. Handle missing values (median imputation)
-    df['TotalCharges'] = df['TotalCharges'].fillna(df['TotalCharges'].median())
+    # 3. Drop TotalCharges (Redundant with tenure and MonthlyCharges)
+    df = df.drop('TotalCharges', axis=1)
     
     return df
 
@@ -31,7 +28,7 @@ def preprocess_data(df, is_training=True, scaler=None, feature_cols=None):
         df['Churn'] = le.fit_transform(df['Churn']) # No=0, Yes=1
     
     # 2. Identify Numeric and Categorical columns
-    numeric_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
+    numeric_cols = ['tenure', 'MonthlyCharges']
     categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
     if 'customerID' in categorical_cols: categorical_cols.remove('customerID')
     
@@ -67,14 +64,12 @@ if __name__ == "__main__":
     # Test script
     import os
     DATA_PATH = "data/WA_Fn-UseC_-Telco-Customer-Churn.csv"
-    if not os.path.exists(DATA_PATH):
-        DATA_PATH = "../WA_Fn-UseC_-Telco-Customer-Churn.csv"
         
     try:
         data = load_and_clean_data(DATA_PATH)
         X_train, X_test, y_train, y_test, scaler, feature_names = preprocess_data(data)
-        print("✅ Preprocessing Successful")
+        print("Preprocessing Successful")
         print(f"X_train shape: {X_train.shape}")
         print(f"Features: {len(feature_names)}")
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"Error: {e}")
