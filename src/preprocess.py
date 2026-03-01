@@ -29,10 +29,13 @@ def preprocess_data(df, is_training=True, scaler=None, feature_cols=None):
     
     # 2. Identify Numeric and Categorical columns
     numeric_cols = ['tenure', 'MonthlyCharges']
-    categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
-    if 'customerID' in categorical_cols: categorical_cols.remove('customerID')
     
     # 3. Scaling Numeric features
+    for col in numeric_cols:
+        if col not in df.columns:
+            print(f"Warning: Numeric column {col} missing during inference. Adding as 0.")
+            df[col] = 0
+            
     if is_training:
         scaler = StandardScaler()
         df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
@@ -40,12 +43,21 @@ def preprocess_data(df, is_training=True, scaler=None, feature_cols=None):
         df[numeric_cols] = scaler.transform(df[numeric_cols])
     
     # 4. One-Hot Encoding
+    categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
+    if 'customerID' in categorical_cols: categorical_cols.remove('customerID')
+    if 'Churn' in categorical_cols: categorical_cols.remove('Churn')
+    
+    # Debug info for Streamlit logs
+    if not is_training:
+        print(f"Inference input columns: {df.columns.tolist()}")
+        print(f"Detected categorical columns: {categorical_cols}")
+
     df = pd.get_dummies(df, columns=categorical_cols, drop_first=True)
     
     if is_training:
         # Save feature columns (excluding target)
-        feature_cols = df.drop('Churn', axis=1).columns.tolist()
-        X = df.drop('Churn', axis=1)
+        feature_cols = [c for c in df.columns if c != 'Churn']
+        X = df[feature_cols]
         y = df['Churn']
         
         X_train, X_test, y_train, y_test = train_test_split(
