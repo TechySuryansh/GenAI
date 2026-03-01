@@ -1,14 +1,21 @@
 import os
-import exec_file # Not a standard lib, using alternative
 
-# This is a deployment bridge to satisfy Streamlit Cloud's configuration
-# while maintaining a professional root-level project structure.
+# Professional Deployment Bridge for Streamlit Cloud
+# This script satisfies legacy path settings while running the clean root-level app.
 
-bridge_path = os.path.abspath(__file__)
-root_dir = os.path.abspath(os.path.join(os.path.dirname(bridge_path), "../../"))
-os.chdir(root_dir)
+# 1. Determine the project root absolute path
+bridge_file = os.path.abspath(__file__)
+project_root = os.path.abspath(os.path.join(os.path.dirname(bridge_file), "../../"))
 
-# Execute the main app.py
-with open("app.py", "rb") as f:
+# 2. Change working directory to root
+os.chdir(project_root)
+
+# 3. Execute the root-level app.py with correct context
+with open(os.path.join(project_root, "app.py"), "rb") as f:
     code = compile(f.read(), "app.py", "exec")
-    exec(code, globals())
+    # Explicitly set __file__ so app.py correctly determines BASE_DIR
+    exec(code, {
+        "__file__": os.path.join(project_root, "app.py"),
+        "__name__": "__main__",
+        **globals()
+    })

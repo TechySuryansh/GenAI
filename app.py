@@ -8,12 +8,16 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import sys
 
-# Project directory configur# Robust Path Logic: Works from root or sub-folders
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-if "data" in CURRENT_DIR or "src" in CURRENT_DIR:
-    BASE_DIR = os.path.abspath(os.path.join(CURRENT_DIR, "../../"))
-else:
-    BASE_DIR = CURRENT_DIR
+# Standardized Path Configuration
+# This ensures accuracy whether run from root, src, or via a deployment bridge
+CURRENT_FILE_PATH = os.path.abspath(__file__)
+BASE_DIR = os.path.dirname(CURRENT_FILE_PATH)
+
+# If this file is being executed from a subfolder, move up to find the root
+if os.path.basename(BASE_DIR) in ["src", "app", "data"]:
+    BASE_DIR = os.path.dirname(BASE_DIR)
+if os.path.basename(BASE_DIR) in ["app", "data"]: # Handle nested case like data/app/
+    BASE_DIR = os.path.dirname(BASE_DIR)
 SRC_PATH = os.path.join(BASE_DIR, "src")
 sys.path.append(SRC_PATH)
 
