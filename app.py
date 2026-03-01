@@ -8,8 +8,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import sys
 
-# Project directory configuration
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Project directory configur# Robust Path Logic: Works from root or sub-folders
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+if "data" in CURRENT_DIR or "src" in CURRENT_DIR:
+    BASE_DIR = os.path.abspath(os.path.join(CURRENT_DIR, "../../"))
+else:
+    BASE_DIR = CURRENT_DIR
 SRC_PATH = os.path.join(BASE_DIR, "src")
 sys.path.append(SRC_PATH)
 
