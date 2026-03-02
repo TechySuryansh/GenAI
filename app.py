@@ -159,10 +159,16 @@ with tab1:
         
         prob = current_model.predict_proba(processed_input)[0, 1]
         
-        # Risk classification logic
-        if prob > 0.5: risk, color = "HIGH", "#dc3545"
-        elif prob > 0.25: risk, color = "MEDIUM", "#ffc107"
-        else: risk, color = "LOW", "#28a745"
+        # Model-specific thresholds calibrated to actual probability output ranges
+        # LR tops out ~30% due to regularization; DT outputs discrete leaf probabilities
+        if model_id == "logistic_regression":
+            if prob > 0.28: risk, color = "HIGH", "#dc3545"
+            elif prob > 0.20: risk, color = "MEDIUM", "#ffc107"
+            else: risk, color = "LOW", "#28a745"
+        else:  # decision_tree
+            if prob > 0.40: risk, color = "HIGH", "#dc3545"
+            elif prob > 0.20: risk, color = "MEDIUM", "#ffc107"
+            else: risk, color = "LOW", "#28a745"
         
         res_col1, res_col2 = st.columns(2)
         res_col1.metric("Churn Probability", f"{prob*100:.1f}%")
