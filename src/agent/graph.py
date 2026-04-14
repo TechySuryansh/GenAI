@@ -3,6 +3,7 @@ LangGraph workflow for the Agentic AI Retention Strategy Assistant.
 Nodes: analyze_risk → retrieve_strategies → generate_plan → respond
 """
 import os
+import logging
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -12,6 +13,9 @@ from langgraph.checkpoint.memory import MemorySaver
 from agent.state import AgentState
 
 load_dotenv()
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # ── LLM Setup ──────────────────────────────────────────────────────────────
 llm = ChatGroq(
@@ -106,7 +110,7 @@ def retrieve_strategies(state: AgentState) -> dict:
         docs = retriever.invoke(query)
         sources = [doc.page_content for doc in docs[:5]]
     except Exception as e:
-        print(f"⚠️ RAG retrieval failed: {e}")
+        logger.error(f"⚠️ RAG retrieval failed: {e}")
         sources = [
             "Offer a 15-20% loyalty discount on a 1-year contract upgrade.",
             "Bundle internet security and tech support at a reduced rate.",

@@ -3,6 +3,7 @@ Vector store setup and retrieval for the Study Coach RAG pipeline.
 Uses ChromaDB with sentence-transformers embeddings.
 """
 import os
+import logging
 from langchain_community.vectorstores import Chroma
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -16,6 +17,9 @@ CHROMA_DIR = os.path.join(BASE_DIR, "chroma_db")
 # Embedding model (runs locally, no API needed)
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 
+# Configure logging
+logger = logging.getLogger(__name__)
+
 
 def get_embeddings():
     """Get the HuggingFace embedding function."""
@@ -27,10 +31,10 @@ def ingest_knowledge_base():
     Load all .txt and .md files from data/knowledge_base/,
     split into chunks, and store in ChromaDB.
     """
-    print(f"📚 Loading documents from {KB_DIR}...")
+    logger.info(f"📚 Loading documents from {KB_DIR}...")
 
     if not os.path.exists(KB_DIR):
-        print(f"⚠️ Knowledge base directory not found: {KB_DIR}")
+        logger.warning(f"⚠️ Knowledge base directory not found: {KB_DIR}")
         return None
 
     # Load .txt files
@@ -42,10 +46,10 @@ def ingest_knowledge_base():
             documents.extend(loader.load())
 
     if not documents:
-        print("⚠️ No documents found in knowledge base.")
+        logger.warning("⚠️ No documents found in knowledge base.")
         return None
 
-    print(f"   Loaded {len(documents)} documents")
+    logger.info(f"   Loaded {len(documents)} documents")
 
     # Split into chunks
     splitter = RecursiveCharacterTextSplitter(
@@ -54,7 +58,7 @@ def ingest_knowledge_base():
         separators=["\n\n", "\n", ". ", " "],
     )
     chunks = splitter.split_documents(documents)
-    print(f"   Split into {len(chunks)} chunks")
+    logger.info(f"   Split into {len(chunks)} chunks")
 
     # Create vector store
     embeddings = get_embeddings()
@@ -63,7 +67,7 @@ def ingest_knowledge_base():
         embedding=embeddings,
         persist_directory=CHROMA_DIR,
     )
-    print(f"✅ Vector store created at {CHROMA_DIR}")
+    logger.info(f"✅ Vector store created at {CHROMA_DIR}")
     return vectordb
 
 
@@ -75,7 +79,7 @@ def get_retriever(k=5):
     embeddings = get_embeddings()
 
     if not os.path.exists(CHROMA_DIR):
-        print("Vector store not found. Ingesting knowledge base...")
+        logger.info("Vector store not found. Ingesting knowledge base...")
         vectordb = ingest_knowledge_base()
         if vectordb is None:
             raise RuntimeError("No knowledge base to ingest.")

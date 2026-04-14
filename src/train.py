@@ -33,9 +33,7 @@ def train_models(X_train, y_train):
     return results
 
 def evaluate_and_save_metrics(models, X_test, y_test, directory='result'):
-    """
-    Evaluate models and save metrics to JSON.
-    """
+    
     if not os.path.exists(directory):
         os.makedirs(directory)
         
@@ -54,9 +52,7 @@ def evaluate_and_save_metrics(models, X_test, y_test, directory='result'):
     print(f"Metrics saved to {directory}/metrics.json")
 
 def save_artifacts(models, scaler, feature_names, directory='notebooks/models'):
-    """
-    Save trained models, scaler, and features to disk.
-    """
+   
     if not os.path.exists(directory):
         os.makedirs(directory)
     

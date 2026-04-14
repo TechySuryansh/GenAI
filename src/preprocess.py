@@ -1,12 +1,15 @@
 import pandas as pd
 import numpy as np
+import logging
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 def load_and_clean_data(file_path):
-    """
-    Load CSV, convert types, and handle missing values.
-    """
+    
     df = pd.read_csv(file_path)
     
     # 1. Drop customerID (non-predictive)
@@ -18,10 +21,7 @@ def load_and_clean_data(file_path):
     return df
 
 def preprocess_data(df, is_training=True, scaler=None, feature_cols=None):
-    """
-    Perform encoding, scaling and splitting.
-    If is_training is False, use provided scaler and feature_cols.
-    """
+    
     # 1. Encode Target variable (Churn) if training
     if is_training:
         le = LabelEncoder()
@@ -33,7 +33,7 @@ def preprocess_data(df, is_training=True, scaler=None, feature_cols=None):
     # 3. Scaling Numeric features
     for col in numeric_cols:
         if col not in df.columns:
-            print(f"Warning: Numeric column {col} missing during inference. Adding as 0.")
+            logger.warning(f"Numeric column {col} missing during inference. Adding as 0.")
             df[col] = 0
             
     if is_training:
@@ -49,8 +49,8 @@ def preprocess_data(df, is_training=True, scaler=None, feature_cols=None):
     
     # Debug info for Streamlit logs
     if not is_training:
-        print(f"Inference input columns: {df.columns.tolist()}")
-        print(f"Detected categorical columns: {categorical_cols}")
+        logger.info(f"Inference input columns: {df.columns.tolist()}")
+        logger.info(f"Detected categorical columns: {categorical_cols}")
 
     df = pd.get_dummies(df, columns=categorical_cols, drop_first=True)
     
@@ -80,8 +80,8 @@ if __name__ == "__main__":
     try:
         data = load_and_clean_data(DATA_PATH)
         X_train, X_test, y_train, y_test, scaler, feature_names = preprocess_data(data)
-        print("Preprocessing Successful")
-        print(f"X_train shape: {X_train.shape}")
-        print(f"Features: {len(feature_names)}")
+        logger.info("Preprocessing Successful")
+        logger.info(f"X_train shape: {X_train.shape}")
+        logger.info(f"Features: {len(feature_names)}")
     except Exception as e:
-        print(f"Error: {e}")
+        logger.error(f"Error: {e}")
