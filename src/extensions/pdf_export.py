@@ -69,11 +69,48 @@ class RetentionReportPDF(FPDF):
         # Strip any remaining non-latin1 characters (emojis, etc.)
         return text.encode("latin-1", errors="replace").decode("latin-1")
 
+    def safe_multi_cell(self, w, h, txt, align="J", **kwargs):
+        """Robust wrapper for multi_cell to previz 'Not enough horizontal space' crash."""
+        if not txt:
+            return
+            
+        # Ensure a minimum effective width for rendering
+        min_w = 15.0 
+        safe_w = max(w, min_w)
+        
+        # Check if we are too far right to reasonably fit the cell
+        if self.get_x() + safe_w > self.w - self.r_margin + 2:
+            self.set_x(self.l_margin)
+            
+        try:
+            # In fpdf2, multi_cell supports align, ln, etc.
+            self.multi_cell(safe_w, h, txt, align=align, **kwargs)
+        except Exception:
+            # Absolute fallback to write() to prevent application crash
+            self.write(h, txt + "\n")
+
+    def _sanitize(self, text):
+        """Remove characters that fpdf's latin-1 encoding cannot handle."""
+        if not text:
+            return ""
+        # Strip markdown bold/heading markers
+        text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)
+        text = re.sub(r"#{1,4}\s*", "", text)
+        # Replace common unicode with ASCII equivalents
+        replacements = {
+            "\u2022": "-", "\u2013": "-", "\u2014": "--",
+            "\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"',
+            "\u2122": "(TM)", "\u00ae": "(R)", "\u00a9": "(C)",
+            "\u2026": "..."
+        }
+        for k, v in replacements.items():
+            text = text.replace(k, v)
+        # Strip any remaining non-latin1 characters (emojis, etc.)
+        return text.encode("latin-1", errors="replace").decode("latin-1")
+
     def body_text(self, text):
         """
-        Full robust implementation of body text rendering.
-        Handles long unbreakable strings, dynamic indentation, and 
-        prevents FPDF horizontal space crashes.
+        Robust body text rendering that handles markdown-like bullets and long words.
         """
         if not text:
             return
@@ -81,15 +118,11 @@ class RetentionReportPDF(FPDF):
         self.set_font("Helvetica", "", 10)
         self.set_text_color(52, 73, 94)
         
-        # 1. Define margins and safety thresholds
         margin_left = self.l_margin
         margin_right = self.r_margin
         page_width = self.w
         
-        # Ensure we always have a minimum safe width (defensive check)
-        min_safe_width = 10.0 
-        
-        clean = self._sanitize(text)
+        clean = self._sanitize(str(text))
         
         for line in clean.split("\n"):
             line = line.strip()
@@ -97,58 +130,45 @@ class RetentionReportPDF(FPDF):
                 self.ln(3)
                 continue
             
-            # 2. Determine indentation and effective width
-            current_indent = 0
+            # Identify bullets
+            indent = 0
             if line.startswith(("- ", "* ")):
-                current_indent = 5
-                display_line = f"- {line[2:]}"
+                indent = 6
+                display_line = f"  {line}"
             else:
                 display_line = line
             
-            # Calculate exact available width for this line segment
-            start_x = margin_left + current_indent
-            eff_width = max(page_width - start_x - margin_right, min_safe_width)
+            # Start position and available width
+            start_x = margin_left + indent
+            eff_width = page_width - start_x - margin_right
             
-            # 3. Defensive Word-Breaking Logic
-            # Detect if any single word is wider than the effective width
-            words = display_line.split(" ")
-            final_line_parts = []
+            # Defensive Word-Breaking for extremely narrow spaces
+            if eff_width < 40: # If space is tight, break long words
+                words = display_line.split(" ")
+                processed_words = []
+                for word in words:
+                    if self.get_string_width(word) > eff_width:
+                        # Break word into manageable chunks
+                        chunk = ""
+                        for char in word:
+                            if self.get_string_width(chunk + char) < (eff_width - 5):
+                                chunk += char
+                            else:
+                                processed_words.append(chunk)
+                                chunk = char
+                        processed_words.append(chunk)
+                    else:
+                        processed_words.append(word)
+                display_line = " ".join(processed_words)
+
+            self.set_x(start_x)
+            if line.startswith("|"): # Special case for table-like lines
+                self.set_font("Courier", "", 9)
+                self.safe_multi_cell(eff_width, 5, display_line)
+                self.set_font("Helvetica", "", 10)
+            else:
+                self.safe_multi_cell(eff_width, 6, display_line)
             
-            for word in words:
-                word_w = self.get_string_width(word)
-                if word_w > (eff_width - 1): # -1 for safety margin
-                    # Edge Case: Word is too long. Break it manually.
-                    temp_word = ""
-                    for char in word:
-                        if self.get_string_width(temp_word + char) < (eff_width - 2):
-                            temp_word += char
-                        else:
-                            final_line_parts.append(temp_word)
-                            temp_word = char
-                    final_line_parts.append(temp_word)
-                else:
-                    final_line_parts.append(word)
-            
-            # Reconstruct the line with forced breaks if necessary
-            safe_content = " ".join(final_line_parts)
-            
-            # 4. Final Rendering
-            try:
-                self.set_x(start_x)
-                # Handle special fonts for code lines
-                if line.startswith("|"):
-                    self.set_font("Courier", "", 9)
-                    self.multi_cell(eff_width, 5, safe_content)
-                    self.set_font("Helvetica", "", 10)
-                else:
-                    # multi_cell handles normal wrapping of 'safe_content'
-                    self.multi_cell(eff_width, 6, safe_content)
-            except Exception:
-                # Absolute fallback to prevent crash in any edge case
-                self.set_x(start_x)
-                self.write(5, safe_content + "\n")
-            
-            # Reset X to left margin for the next line
             self.set_x(margin_left)
 
 
@@ -174,7 +194,7 @@ def generate_retention_pdf(
     eff_width = pdf.w - margin_left - pdf.r_margin
 
     # Customer Info Box
-    pdf.set_fill_color(236, 240, 241)
+    pdf.set_fill_color(240, 244, 248)
     pdf.set_font("Helvetica", "B", 11)
     pdf.set_text_color(44, 62, 80)
     
@@ -199,9 +219,9 @@ def generate_retention_pdf(
             pdf.set_font("Helvetica", "I", 10)
             pdf.set_text_color(52, 73, 94)
             safe_src = pdf._sanitize(src)
-            # Indent numbered sources safely
+            # Use safe wrapper even here
             pdf.set_x(margin_left + 5)
-            pdf.multi_cell(eff_width - 5, 6, f"{i}. {safe_src}")
+            pdf.safe_multi_cell(eff_width - 8, 6, f"{i}. {safe_src}")
             pdf.ln(1)
 
     if disclaimer:
@@ -210,6 +230,6 @@ def generate_retention_pdf(
         pdf.set_text_color(100, 100, 100)
         safe_disclaimer = pdf._sanitize(disclaimer)
         pdf.set_x(margin_left)
-        pdf.multi_cell(eff_width, 5, safe_disclaimer)
+        pdf.safe_multi_cell(eff_width, 5, safe_disclaimer)
 
     return bytes(pdf.output(dest="S"))
