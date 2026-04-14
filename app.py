@@ -228,7 +228,7 @@ with tab_predict:
             input_df = pd.DataFrame([input_data])
             processed_input = preprocess_data(input_df, is_training=False, scaler=scaler, feature_cols=feature_names)
 
-            prob = current_model.predict_proba(processed_input)[0, 1]
+            prob = float(current_model.predict_proba(processed_input)[0, 1])
 
             # Risk thresholds
             if model_id == "logistic_regression":
