@@ -70,16 +70,24 @@ class RetentionReportPDF(FPDF):
         return text.encode("latin-1", errors="replace").decode("latin-1")
 
     def body_text(self, text):
+        """
+        Full robust implementation of body text rendering.
+        Handles long unbreakable strings, dynamic indentation, and 
+        prevents FPDF horizontal space crashes.
+        """
         if not text:
             return
             
         self.set_font("Helvetica", "", 10)
         self.set_text_color(52, 73, 94)
         
-        # Calculate standard width
+        # 1. Define margins and safety thresholds
         margin_left = self.l_margin
         margin_right = self.r_margin
-        eff_width = self.w - margin_left - margin_right
+        page_width = self.w
+        
+        # Ensure we always have a minimum safe width (defensive check)
+        min_safe_width = 10.0 
         
         clean = self._sanitize(text)
         
@@ -88,27 +96,59 @@ class RetentionReportPDF(FPDF):
             if not line:
                 self.ln(3)
                 continue
-                
-            # Always reset to left margin before deciding on indentation
-            self.set_x(margin_left)
             
+            # 2. Determine indentation and effective width
+            current_indent = 0
             if line.startswith(("- ", "* ")):
-                # Handle bullets with specific indentation
-                indent = 5
-                self.set_x(margin_left + indent)
-                bullet_text = f"- {line[2:]}"
-                # Explicitly calculate width as remaining space
-                self.multi_cell(eff_width - indent, 6, bullet_text)
-            elif line.startswith("|"):
-                # Handle code/table lines
-                self.set_font("Courier", "", 9)
-                self.multi_cell(eff_width, 5, line)
-                self.set_font("Helvetica", "", 10)
+                current_indent = 5
+                display_line = f"- {line[2:]}"
             else:
-                # Standard paragraph
-                self.multi_cell(eff_width, 6, line)
+                display_line = line
             
-            # Reset X after every line to ensure next iteration starts fresh
+            # Calculate exact available width for this line segment
+            start_x = margin_left + current_indent
+            eff_width = max(page_width - start_x - margin_right, min_safe_width)
+            
+            # 3. Defensive Word-Breaking Logic
+            # Detect if any single word is wider than the effective width
+            words = display_line.split(" ")
+            final_line_parts = []
+            
+            for word in words:
+                word_w = self.get_string_width(word)
+                if word_w > (eff_width - 1): # -1 for safety margin
+                    # Edge Case: Word is too long. Break it manually.
+                    temp_word = ""
+                    for char in word:
+                        if self.get_string_width(temp_word + char) < (eff_width - 2):
+                            temp_word += char
+                        else:
+                            final_line_parts.append(temp_word)
+                            temp_word = char
+                    final_line_parts.append(temp_word)
+                else:
+                    final_line_parts.append(word)
+            
+            # Reconstruct the line with forced breaks if necessary
+            safe_content = " ".join(final_line_parts)
+            
+            # 4. Final Rendering
+            try:
+                self.set_x(start_x)
+                # Handle special fonts for code lines
+                if line.startswith("|"):
+                    self.set_font("Courier", "", 9)
+                    self.multi_cell(eff_width, 5, safe_content)
+                    self.set_font("Helvetica", "", 10)
+                else:
+                    # multi_cell handles normal wrapping of 'safe_content'
+                    self.multi_cell(eff_width, 6, safe_content)
+            except Exception:
+                # Absolute fallback to prevent crash in any edge case
+                self.set_x(start_x)
+                self.write(5, safe_content + "\n")
+            
+            # Reset X to left margin for the next line
             self.set_x(margin_left)
 
 
