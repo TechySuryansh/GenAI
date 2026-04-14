@@ -41,19 +41,35 @@ class RetentionReportPDF(FPDF):
         self.line(10, self.get_y(), 80, self.get_y())
         self.ln(3)
 
+    def _sanitize(self, text):
+        """Remove characters that fpdf's latin-1 encoding cannot handle."""
+        # Strip markdown bold/heading markers
+        text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)
+        text = re.sub(r"#{1,4}\s*", "", text)
+        # Replace common unicode with ASCII equivalents
+        text = text.replace("\u2022", "-")   # bullet
+        text = text.replace("\u2013", "-")   # en-dash
+        text = text.replace("\u2014", "--")  # em-dash
+        text = text.replace("\u2018", "'")   # left single quote
+        text = text.replace("\u2019", "'")   # right single quote
+        text = text.replace("\u201c", '"')   # left double quote
+        text = text.replace("\u201d", '"')   # right double quote
+        # Strip any remaining non-latin1 characters (emojis, etc.)
+        text = text.encode("latin-1", errors="replace").decode("latin-1")
+        return text
+
     def body_text(self, text):
         self.set_font("Helvetica", "", 10)
         self.set_text_color(52, 73, 94)
-        clean = re.sub(r"\*\*(.*?)\*\*", r"\1", text)
-        clean = re.sub(r"#{1,4}\s*", "", clean)
+        clean = self._sanitize(text)
         for line in clean.split("\n"):
             line = line.strip()
             if not line:
                 self.ln(3)
                 continue
-            if line.startswith(("- ", "* ", "• ")):
+            if line.startswith(("- ", "* ")):
                 self.set_x(15)
-                self.multi_cell(0, 6, f"  {chr(8226)} {line[2:]}")
+                self.multi_cell(0, 6, f"  - {line[2:]}")
             elif line.startswith("|"):
                 self.set_font("Courier", "", 9)
                 self.multi_cell(0, 5, line)
@@ -102,15 +118,16 @@ def generate_retention_pdf(
             pdf.set_font("Helvetica", "", 10)
             pdf.set_text_color(52, 73, 94)
             pdf.set_x(15)
-            pdf.multi_cell(0, 6, f"{i}. {src}")
+            safe_src = pdf._sanitize(src)
+            pdf.multi_cell(0, 6, f"{i}. {safe_src}")
             pdf.ln(1)
 
     if disclaimer:
         pdf.section_title("Disclaimer")
         pdf.set_font("Helvetica", "I", 9)
         pdf.set_text_color(100, 100, 100)
-        clean_disclaimer = re.sub(r"\*\*(.*?)\*\*", r"\1", disclaimer)
-        clean_disclaimer = clean_disclaimer.replace(chr(9878) + chr(65039), "").strip()
-        pdf.multi_cell(0, 5, clean_disclaimer)
+        safe_disclaimer = pdf._sanitize(disclaimer)
+        pdf.multi_cell(0, 5, safe_disclaimer)
 
     return pdf.output()
+
