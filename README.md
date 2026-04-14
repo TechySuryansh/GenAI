@@ -1,80 +1,121 @@
-# ChurnGuard AI
+# ChurnGuard AI 🛡️
 
-ChurnGuard AI is a Customer Churn Predictor built with Python and Streamlit. It uses machine learning to predict whether a customer will churn based on demographic data, service subscriptions (internet, phone, etc.), and billing contracts. 
+**Customer Churn Prediction & Agentic AI Retention Strategy Assistant**
 
-It provides an interactive, easy-to-use dashboard to profile customers and outputs the churn probability along with a "Risk Level" and actionable insights.
+ChurnGuard AI is an AI-powered customer analytics system that predicts customer churn and evolves into an agentic AI retention strategist. It uses machine learning to identify at-risk customers and an autonomous AI agent to generate personalized retention strategies.
+
+## Project Overview
+
+- **Milestone 1 (ML Pipeline):** Classical machine learning techniques to predict churn risk using historical customer data (Logistic Regression, Decision Trees).
+- **Milestone 2 (Agentic AI):** An agent-based AI application that autonomously reasons about churn risk, retrieves retention best practices via RAG, plans intervention strategies, and generates structured recommendations.
 
 ## Project Structure
 
 ```text
 GenAI/
+├── app.py                          # Streamlit dashboard (4-tab UI)
+├── .env                            # Groq API key (gitignored)
+├── requirements.txt                # Python dependencies
 ├── data/
-│   ├── WA_Fn-UseC_-Telco-Customer-Churn.csv  # Raw dataset
-│   ├── app/
-│   │   └── app.py                            # Streamlit frontend dashboard
-│   ├── models/                               # Trained models, scalers, and encoders (.pkl files)
-│   ├── processed/                            # Train/test split data (.csv files)
-│   ├── results/
-│   │   └── metrics.json                      # Performance metrics
-│   └── src/
-│       ├── preprocess.py                     # Data cleaning, encoding, and scaling
-│       ├── train.py                          # Model training pipelines (Logistic Regression, Decision Tree)
-│       └── evaluate.py                       # Evaluation scripts to generate matrices & ROC curves
-├── reports/
-│   └── figures/                              # Generated CM and ROC plots (.png files)
-└── requirements.txt                          # Python dependencies
+│   ├── WA_Fn-UseC_-Telco-Customer-Churn.csv   # Raw dataset (7,043 customers)
+│   └── knowledge_base/             # RAG knowledge base
+│       ├── retention_strategies.txt
+│       ├── service_retention.txt
+│       ├── cs_best_practices.txt
+│       └── churn_patterns.txt
+├── src/
+│   ├── preprocess.py               # Data cleaning, encoding, scaling
+│   ├── train.py                    # Model training (LR, DT, GridSearchCV)
+│   ├── evaluate.py                 # Evaluation & visualization
+│   ├── agent/
+│   │   ├── state.py                # LangGraph state schema
+│   │   └── graph.py                # LangGraph workflow (4 nodes)
+│   ├── rag/
+│   │   └── vector_store.py         # ChromaDB + HuggingFace embeddings
+│   └── extensions/
+│       └── pdf_export.py           # PDF retention report generator
+├── notebooks/
+│   ├── Analysis.ipynb              # EDA notebook
+│   └── models/                     # Trained .pkl models & scalers
+├── results/
+│   └── metrics.json                # Model evaluation metrics
+└── reports/                        # Confusion matrices & ROC curves
 ```
 
 ## Features
 
-- **Interactive UI**: A sleek, premium dashboard built using Streamlit.
-- **Data Preprocessing**: Automatically handles missing values, performs one-hot encoding for categorical variables, and scales bounding numeric columns.
-- **Machine Learning Models**: 
-  - Logistic Regression Pipeline with hyperparameter tuning via GridSearchCV for probability calibration.
-  - Decision Tree Classifier used for model interpretability.
-- **Model Interpretability**: Dynamically visuals the global importance of each individual feature in predicting churn.
-- **Evaluation Methods**: Generates test metrics (Accuracy, Precision, Recall, F1-Score), Confusion Matrices, and interactive ROC-AUC curves.
+### Milestone 1 — ML-Based Churn Prediction
+- **Interactive Dashboard**: Premium Streamlit UI for customer profiling.
+- **Data Preprocessing**: Handles missing values, one-hot encoding, and feature scaling.
+- **Machine Learning Models**:
+  - Logistic Regression with GridSearchCV hyperparameter tuning.
+  - Decision Tree Classifier for model interpretability.
+- **Evaluation**: Accuracy, Precision, Recall, F1-Score, Confusion Matrices, ROC-AUC curves.
+
+### Milestone 2 — Agentic AI Retention Strategist
+- **LangGraph Agent**: Autonomous 4-node workflow (Analyze → Retrieve → Plan → Respond).
+- **Groq LLM Integration**: Powered by `llama-3.1-8b-instant` via free-tier Groq API.
+- **RAG (Retrieval-Augmented Generation)**: ChromaDB vector store with HuggingFace `all-MiniLM-L6-v2` embeddings, loaded with telecom retention best practices.
+- **Structured Output**: Risk Summary, Retention Recommendations, Sources, and Ethical Disclaimer.
+- **Conversational Interface**: Interactive chat for customer service agents to ask follow-up questions.
+- **PDF Export**: Downloadable "Retention Action Plan" reports.
+- **Session Memory**: Maintains context across interactions using LangGraph checkpointers.
+
+## Technology Stack
+
+| Component | Technology |
+|-----------|-----------|
+| ML Models | Scikit-Learn (Logistic Regression, Decision Trees) |
+| Agent Framework | LangGraph |
+| LLM | Groq (Llama 3.1) |
+| RAG | ChromaDB + HuggingFace Embeddings |
+| UI | Streamlit |
+| PDF Export | fpdf2 |
 
 ## Installation
 
-1. Clone this repository or navigate to this project folder.
-2. Ensure you have Python installed.
-3. Install the required dependencies by running:
-```bash
-pip install -r requirements.txt
-```
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/TechySuryansh/GenAI.git
+   cd GenAI
+   ```
+
+2. Create a virtual environment and install dependencies:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+3. Create a `.env` file with your Groq API key:
+   ```bash
+   echo "GROQ_API_KEY=your_groq_api_key_here" > .env
+   ```
+
+4. Ingest the RAG knowledge base:
+   ```bash
+   python src/rag/vector_store.py
+   ```
 
 ## Usage
 
-### 1. Training the Model
-
-If you have fresh data or want to re-train the underlying models, navigate to the main directory and run the training script:
-
+### Launch the Application
 ```bash
-python data/src/train.py
+streamlit run app.py
 ```
 
-This will:
-- Preprocess the dataset (`WA_Fn-UseC_-Telco-Customer-Churn.csv`).
-- Save the trained pipelines and artifact scalers into `data/models/`.
-- Output evaluation metrics into `data/results/metrics.json`.
-- Save testing splits into `data/processed/`.
+### How to Use
+1. **🎯 Predict Churn** — Fill in a customer profile and click "Predict Churn & Analyze" to get the ML prediction.
+2. **🤖 AI Retention Strategy** — Click "Generate AI Retention Strategy" to have the agent autonomously create a retention plan.
+3. **💬 Chat with Agent** — Ask follow-up questions about the customer or retention strategies.
+4. **📈 Model Performance** — View confusion matrices, ROC curves, and model comparison.
+5. **📥 Download PDF** — Export the AI-generated retention plan as a PDF report.
 
-### 2. Evaluating the Model
-
-Once trained, generate the ROC curves and confusion matrices by running:
-
+### (Optional) Retrain Models
 ```bash
-python data/src/evaluate.py
-```
-This script will read from the generated `data/processed` test splits and drop visualization artifacts (`.png`) in the `reports/figures/` folder.
-
-### 3. Launching the App
-
-Run the Streamlit application to start profiling customers via the web interface:
-
-```bash
-streamlit run data/app/app.py
+cd src && python train.py
+python evaluate.py
 ```
 
-Open your local browser to view and interact with the ChurnGuard AI dashboard interface!
+## License
+This project is for academic purposes.
