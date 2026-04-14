@@ -54,6 +54,31 @@ GenAI/
 
 ### Milestone 2 — Agentic AI Retention Strategist
 - **LangGraph Agent**: Autonomous 4-node workflow (Analyze → Retrieve → Plan → Respond).
+- **Workflow Visualization**:
+```mermaid
+graph TD
+    Start((Start)) --> Analyze[<b>Analyze Risk</b><br/>Identify churn drivers]
+    Analyze --> Retrieve[<b>Retrieve Strategies</b><br/>Query RAG KB]
+    Retrieve --> Plan[<b>Generate Plan</b><br/>Draft recommendations]
+    Plan --> Respond[<b>Respond</b><br/>Interaction & Disclaimer]
+    Respond --> End((End))
+    
+    subgraph "LangGraph State Management"
+    Analyze
+    Retrieve
+    Plan
+    Respond
+    end
+    
+    subgraph "Tools & Data"
+    LLM[Groq Llama 3.1]
+    RAG[(ChromaDB KB)]
+    LLM --- Analyze
+    LLM --- Plan
+    LLM --- Respond
+    RAG --- Retrieve
+    end
+```
 - **Groq LLM Integration**: Powered by `llama-3.1-8b-instant` via free-tier Groq API.
 - **RAG (Retrieval-Augmented Generation)**: ChromaDB vector store with HuggingFace `all-MiniLM-L6-v2` embeddings, loaded with telecom retention best practices.
 - **Structured Output**: Risk Summary, Retention Recommendations, Sources, and Ethical Disclaimer.
