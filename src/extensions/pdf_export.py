@@ -14,19 +14,25 @@ class RetentionReportPDF(FPDF):
     def header(self):
         self.set_font("Helvetica", "B", 18)
         self.set_text_color(44, 62, 80)
-        self.cell(0, 12, "ChurnGuard AI", ln=True, align="C")
+        # Use explicit width to avoid "0" width space issues
+        full_width = self.w - self.l_margin - self.r_margin
+        self.cell(full_width, 12, "ChurnGuard AI", ln=True, align="C")
+        
         self.set_font("Helvetica", "", 9)
         self.set_text_color(127, 140, 141)
-        self.cell(0, 6, "Customer Retention Action Plan", ln=True, align="C")
-        self.line(10, self.get_y() + 2, 200, self.get_y() + 2)
+        self.cell(full_width, 6, "Customer Retention Action Plan", ln=True, align="C")
+        
+        # Draw line
+        self.line(self.l_margin, self.get_y() + 2, self.w - self.r_margin, self.get_y() + 2)
         self.ln(6)
 
     def footer(self):
         self.set_y(-15)
         self.set_font("Helvetica", "I", 8)
         self.set_text_color(149, 165, 166)
+        full_width = self.w - self.l_margin - self.r_margin
         self.cell(
-            0, 10,
+            full_width, 10,
             f"Generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}  |  "
             f"Page {self.page_no()}  |  CONFIDENTIAL",
             align="C",
@@ -34,48 +40,76 @@ class RetentionReportPDF(FPDF):
 
     def section_title(self, title):
         self.ln(4)
+        self.set_x(self.l_margin) # Reset X to margin
         self.set_font("Helvetica", "B", 14)
         self.set_text_color(41, 128, 185)
-        self.cell(0, 10, title, ln=True)
+        
+        full_width = self.w - self.l_margin - self.r_margin
+        self.cell(full_width, 10, title, ln=True)
         self.set_draw_color(41, 128, 185)
-        self.line(10, self.get_y(), 80, self.get_y())
+        self.line(self.l_margin, self.get_y(), 80, self.get_y())
         self.ln(3)
 
     def _sanitize(self, text):
         """Remove characters that fpdf's latin-1 encoding cannot handle."""
+        if not text:
+            return ""
         # Strip markdown bold/heading markers
         text = re.sub(r"\*\*(.*?)\*\*", r"\1", text)
         text = re.sub(r"#{1,4}\s*", "", text)
         # Replace common unicode with ASCII equivalents
-        text = text.replace("\u2022", "-")   # bullet
-        text = text.replace("\u2013", "-")   # en-dash
-        text = text.replace("\u2014", "--")  # em-dash
-        text = text.replace("\u2018", "'")   # left single quote
-        text = text.replace("\u2019", "'")   # right single quote
-        text = text.replace("\u201c", '"')   # left double quote
-        text = text.replace("\u201d", '"')   # right double quote
+        replacements = {
+            "\u2022": "-", "\u2013": "-", "\u2014": "--",
+            "\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"',
+            "\u2122": "(TM)", "\u00ae": "(R)", "\u00a9": "(C)",
+            "\u2026": "..."
+        }
+        for k, v in replacements.items():
+            text = text.replace(k, v)
         # Strip any remaining non-latin1 characters (emojis, etc.)
-        text = text.encode("latin-1", errors="replace").decode("latin-1")
-        return text
+        return text.encode("latin-1", errors="replace").decode("latin-1")
 
     def body_text(self, text):
+        if not text:
+            return
+            
         self.set_font("Helvetica", "", 10)
         self.set_text_color(52, 73, 94)
+        
+        # Calculate standard width
+        margin_left = self.l_margin
+        margin_right = self.r_margin
+        eff_width = self.w - margin_left - margin_right
+        
         clean = self._sanitize(text)
+        
         for line in clean.split("\n"):
             line = line.strip()
             if not line:
                 self.ln(3)
                 continue
+                
+            # Always reset to left margin before deciding on indentation
+            self.set_x(margin_left)
+            
             if line.startswith(("- ", "* ")):
-                self.set_x(15)
-                self.multi_cell(0, 6, f"  - {line[2:]}")
+                # Handle bullets with specific indentation
+                indent = 5
+                self.set_x(margin_left + indent)
+                bullet_text = f"- {line[2:]}"
+                # Explicitly calculate width as remaining space
+                self.multi_cell(eff_width - indent, 6, bullet_text)
             elif line.startswith("|"):
+                # Handle code/table lines
                 self.set_font("Courier", "", 9)
-                self.multi_cell(0, 5, line)
+                self.multi_cell(eff_width, 5, line)
                 self.set_font("Helvetica", "", 10)
             else:
-                self.multi_cell(0, 6, line)
+                # Standard paragraph
+                self.multi_cell(eff_width, 6, line)
+            
+            # Reset X after every line to ensure next iteration starts fresh
+            self.set_x(margin_left)
 
 
 def generate_retention_pdf(
@@ -95,13 +129,20 @@ def generate_retention_pdf(
     pdf = RetentionReportPDF()
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
+    
+    margin_left = pdf.l_margin
+    eff_width = pdf.w - margin_left - pdf.r_margin
 
     # Customer Info Box
     pdf.set_fill_color(236, 240, 241)
     pdf.set_font("Helvetica", "B", 11)
     pdf.set_text_color(44, 62, 80)
-    pdf.cell(0, 10, f"  Risk Level: {risk_level}  |  Churn Probability: {churn_probability*100:.1f}%", ln=True, fill=True)
-    pdf.cell(0, 8, f"  Contract: {contract}  |  Monthly: ${monthly_charges:.2f}  |  Tenure: {tenure} months", ln=True, fill=True)
+    
+    info_line_1 = f"  Risk Level: {risk_level}  |  Churn Probability: {churn_probability*100:.1f}%"
+    info_line_2 = f"  Contract: {contract}  |  Monthly: ${monthly_charges:.2f}  |  Tenure: {tenure} months"
+    
+    pdf.cell(eff_width, 10, info_line_1, ln=True, fill=True)
+    pdf.cell(eff_width, 8, info_line_2, ln=True, fill=True)
     pdf.ln(4)
 
     if risk_summary:
@@ -115,11 +156,12 @@ def generate_retention_pdf(
     if sources:
         pdf.section_title("Sources & Best Practices")
         for i, src in enumerate(sources, 1):
-            pdf.set_font("Helvetica", "", 10)
+            pdf.set_font("Helvetica", "I", 10)
             pdf.set_text_color(52, 73, 94)
-            pdf.set_x(15)
             safe_src = pdf._sanitize(src)
-            pdf.multi_cell(0, 6, f"{i}. {safe_src}")
+            # Indent numbered sources safely
+            pdf.set_x(margin_left + 5)
+            pdf.multi_cell(eff_width - 5, 6, f"{i}. {safe_src}")
             pdf.ln(1)
 
     if disclaimer:
@@ -127,7 +169,7 @@ def generate_retention_pdf(
         pdf.set_font("Helvetica", "I", 9)
         pdf.set_text_color(100, 100, 100)
         safe_disclaimer = pdf._sanitize(disclaimer)
-        pdf.multi_cell(0, 5, safe_disclaimer)
+        pdf.set_x(margin_left)
+        pdf.multi_cell(eff_width, 5, safe_disclaimer)
 
     return pdf.output()
-
