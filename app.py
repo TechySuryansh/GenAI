@@ -356,6 +356,7 @@ with tab_agent:
                 sources=st.session_state.sources or [],
                 disclaimer=st.session_state.disclaimer or "",
             )
+            pdf_bytes = bytes(pdf_bytes)
             st.download_button(
                 label="📥 Download Retention Report (PDF)",
                 data=pdf_bytes,

@@ -212,4 +212,4 @@ def generate_retention_pdf(
         pdf.set_x(margin_left)
         pdf.multi_cell(eff_width, 5, safe_disclaimer)
 
-    return pdf.output()
+    return bytes(pdf.output(dest="S"))
