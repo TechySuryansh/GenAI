@@ -1,0 +1,61 @@
+# Service-Based Retention Strategies
+
+## Internet Service Retention
+
+### Fiber Optic Customers
+Fiber optic customers pay premium prices and expect premium service. They churn when they feel the price doesn't match the value.
+
+**Recommended Actions:**
+- Offer speed upgrade at no additional cost for 6 months
+- Bundle cybersecurity protection and cloud backup free for 3 months
+- Provide a dedicated support line for fiber customers
+- Offer whole-home WiFi solution at discounted rate
+- Match or beat competitor fiber pricing with a loyalty guarantee
+
+### DSL Customers
+DSL customers are often price-conscious. They may churn to competitors offering fiber at similar prices.
+
+**Recommended Actions:**
+- Offer discounted upgrade path to fiber optic
+- Provide free router upgrade for improved performance
+- Bundle phone service at reduced rate
+- Highlight reliability and coverage advantages of current service
+
+### No Internet Service Customers
+Customers without internet may have limited engagement with the company.
+
+**Recommended Actions:**
+- Offer introductory internet package at promotional rate
+- Bundle internet with existing phone service for overall savings
+- Provide free trial period for internet service
+
+## Support and Security Services
+
+### Customers Without Online Security
+Lack of security services indicates lower engagement and higher churn risk.
+
+**Recommended Actions:**
+- Offer free 3-month trial of online security suite
+- Educate customer on cyber threats and protection benefits
+- Bundle security with existing services at 50% discount
+- Highlight identity theft protection features
+
+### Customers Without Tech Support
+Customers without tech support may become frustrated with technical issues and churn.
+
+**Recommended Actions:**
+- Provide one free tech support call to demonstrate value
+- Offer tech support add-on at $5/month instead of standard $10/month
+- Include remote troubleshooting capability
+- Bundle with device protection for comprehensive coverage
+
+## Streaming Service Retention
+
+### Customers with Streaming Services
+Streaming customers use more bandwidth and are more engaged.
+
+**Recommended Actions:**
+- Offer premium streaming package upgrades at loyalty pricing
+- Provide bandwidth guarantee for streaming quality
+- Bundle multiple streaming platforms for discount
+- Highlight exclusive content partnerships

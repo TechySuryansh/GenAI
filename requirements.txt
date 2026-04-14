@@ -1,8 +1,24 @@
+# ML & Data
 joblib
 matplotlib
 numpy
 pandas
 scikit-learn
 seaborn
+
+# UI
 streamlit>=1.35.0
 altair<5
+
+# Agent / LLM
+langchain>=0.2.0
+langchain-groq>=0.1.0
+langgraph>=0.2.0
+python-dotenv
+
+# RAG
+chromadb
+sentence-transformers
+
+# PDF Export
+fpdf2

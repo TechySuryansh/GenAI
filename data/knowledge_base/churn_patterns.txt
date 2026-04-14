@@ -1,0 +1,53 @@
+# Customer Demographics and Churn Risk Patterns
+
+## Tenure-Based Risk Analysis
+
+### New Customers (0-12 months)
+New customers are the highest risk segment. They have not yet built loyalty or habit with the service.
+
+**Key Observations:**
+- 45% of all churn occurs within the first 12 months
+- Customers who pass the 12-month mark are 60% less likely to churn
+- Month-to-month new customers churn at 3x the rate of contracted new customers
+
+**Intervention Timing:**
+- First contact at 30 days: Welcome call and satisfaction check
+- Second contact at 90 days: Service optimization review
+- Third contact at 6 months: Loyalty offer for contract commitment
+- Fourth contact at 10 months: Pre-renewal retention offer
+
+### Mid-Tenure Customers (12-36 months)
+These customers have shown initial commitment but may be evaluating alternatives.
+
+**Key Observations:**
+- Price sensitivity increases as initial promotional rates expire
+- Service quality expectations rise with tenure
+- Competitors actively target customers at contract renewal points
+
+### Long-Tenure Customers (36+ months)
+Loyal customers who rarely churn but provide the highest lifetime value.
+
+**Key Observations:**
+- Low churn risk but high impact if they do leave
+- Often under-serviced because they're assumed to be "safe"
+- May be paying legacy rates that are higher than current market rates
+
+## Demographic Patterns
+
+### Senior Citizens
+- Higher churn rate despite lower overall percentage of customer base
+- Often face usability challenges with digital services
+- Value personalized human support over automated systems
+- Respond well to simplified plans and dedicated support lines
+
+### Customers Without Partners/Dependents
+- More likely to make quick switching decisions
+- Less anchored by family service bundles
+- More responsive to individual-focused offers and flexibility
+- Value contract flexibility over bundle discounts
+
+### Customers With Partners/Dependents
+- More stable due to shared services and family plans
+- Price-sensitive due to overall household expenses
+- Respond well to family bundle offers and multi-line discounts
+- Value reliability and consistent service quality

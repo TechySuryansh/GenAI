@@ -1,0 +1,52 @@
+# Telecom Customer Retention Strategies
+
+## Contract-Based Retention
+
+### Month-to-Month Customers
+Month-to-month customers are the highest churn risk group. They have no commitment and can leave at any time.
+
+**Recommended Actions:**
+- Offer a 15-20% discount on monthly charges for signing a 1-year contract
+- Provide a one-time loyalty credit of $50-$100 for contract upgrade
+- Bundle additional services (security, backup) at no extra cost for 3 months
+- Waive installation fees for service upgrades
+- Offer a price-lock guarantee for 12 months
+
+### One-Year Contract Customers
+These customers show moderate commitment but may leave at renewal.
+
+**Recommended Actions:**
+- Contact 60 days before contract expiration with a renewal offer
+- Offer a 10% discount for upgrading to a 2-year contract
+- Provide free premium channel package for 6 months on renewal
+- Send personalized thank-you communication acknowledging loyalty
+
+### Two-Year Contract Customers
+These are the most stable customers. Focus on maintaining satisfaction.
+
+**Recommended Actions:**
+- Provide periodic service quality checks
+- Offer early upgrade options for new services
+- Include in VIP customer events and promotions
+- Assign dedicated account manager for accounts over $100/month
+
+## Billing and Payment Retention
+
+### High Monthly Charges (Above $70/month)
+Customers with high monthly charges are price-sensitive and may seek cheaper alternatives.
+
+**Recommended Actions:**
+- Review current plan for unnecessary services and optimize billing
+- Offer a competitive rate match if customer mentions competitor pricing
+- Provide a temporary 3-month discount of 15-25% while reviewing options
+- Suggest bundling services for overall cost reduction
+- Offer autopay discount of $5-$10/month
+
+### Electronic Check Payment Users
+Customers paying by electronic check show higher churn rates than credit card or bank transfer users.
+
+**Recommended Actions:**
+- Offer $5/month discount for switching to autopay with credit card
+- Explain the convenience of automatic payments
+- Highlight late fee avoidance benefits of autopay
+- Provide paper billing option if customer prefers physical statements

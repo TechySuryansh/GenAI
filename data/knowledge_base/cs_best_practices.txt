@@ -1,0 +1,67 @@
+# Customer Service Best Practices for Retention Calls
+
+## Call Opening
+- Greet the customer warmly and introduce yourself by name
+- Reference the customer's history: "I see you've been with us for [X] months, and we truly value your loyalty"
+- State the purpose clearly: "I'm reaching out because we want to make sure you're getting the best value from your plan"
+
+## Active Listening
+- Let the customer express any frustrations without interruption
+- Acknowledge their concerns: "I completely understand your concern about [issue]"
+- Take notes on specific pain points to address
+- Never argue or get defensive — empathize first, solve second
+
+## Presenting Retention Offers
+- Frame offers as exclusive: "I have a special offer available only for valued customers like yourself"
+- Present the strongest offer first — don't start with a weak offer and negotiate up
+- Explain the total value: "This package would normally cost $X, but I can offer it to you for $Y"
+- Create urgency: "This offer is available for the next 48 hours"
+
+## Handling Objections
+
+### "Your prices are too high"
+- Acknowledge the concern and ask what price range they're looking for
+- Compare total value against competitors (speed, reliability, bundled services)
+- Offer plan optimization or temporary discount
+- Reference: "Many customers who switched to competitors came back because of our superior network"
+
+### "I'm switching to a competitor"
+- Ask which competitor and what offer they received
+- Match or beat the competitor offer if within guidelines
+- Highlight switching costs and service interruption risks
+- Mention customer-specific benefits they would lose
+
+### "I don't use all the services I'm paying for"
+- Conduct a service audit and remove unnecessary add-ons
+- Suggest a right-sized plan that better fits their usage
+- Offer credit for unused services in the past billing cycle
+
+## Handling Objections — Advanced
+
+### "I've had too many service issues"
+- Apologize sincerely and acknowledge the frustration
+- Review the service history and explain what steps have been taken
+- Offer a service credit for the inconvenience
+- Schedule a proactive service check or technician visit
+- Provide direct contact for future issues
+
+### "I just don't need the service anymore"
+- Explore the reason (moving, financial hardship, lifestyle change)
+- Offer suspension of service instead of cancellation
+- Provide a reduced-rate "keep alive" plan
+- For financial hardship, offer temporary hardship discount program
+
+## Call Closing
+- Summarize the agreed-upon actions
+- Confirm the customer's satisfaction with the resolution
+- Provide your direct contact information for follow-up
+- Thank them personally for their continued business
+- Set a follow-up reminder for 30 days after intervention
+
+## Ethical Guidelines
+- Never make promises you cannot keep
+- All discounts and offers must be within approved ranges
+- Respect the customer's decision if they ultimately choose to leave
+- Document all interactions and offers in the CRM system
+- Ensure compliance with data privacy regulations at all times
+- Be transparent about contract terms and any changes
