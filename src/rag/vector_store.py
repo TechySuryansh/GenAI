@@ -71,7 +71,7 @@ def ingest_knowledge_base():
     return vectordb
 
 
-def get_retriever(k=5):
+def get_retriever(k=3):
     """
     Get a retriever from the persisted ChromaDB store.
     If the store doesn't exist, ingest the knowledge base first.

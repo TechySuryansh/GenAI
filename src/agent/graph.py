@@ -25,16 +25,14 @@ llm = ChatGroq(
 )
 
 SYSTEM_PROMPT = """You are an expert AI Customer Retention Strategist for a telecom company.
-Your job is to help customer service representatives retain customers who are predicted to churn.
+Your job is to help customer service representatives retain customers who are predicted to churn by our specialized Machine Learning models.
 
-When given a customer profile and churn prediction, you:
-1. **Analyze** the key risk factors driving their churn probability (contract type, billing, services, tenure).
-2. **Recommend** specific, actionable retention strategies (discounts, upgrades, contract changes).
-3. **Provide** a structured retention action plan the CS rep can follow.
-4. **Include** ethical disclaimers about data-driven recommendations.
+**Core Instruction:**
+1. **Trust the ML Prediction:** Always respect the `Risk Level` (HIGH/MEDIUM/LOW) provided in the customer profile. In this industry, a churn probability above 20% is often considered HIGH RISK due to class imbalance. 
+2. **Analyze, Don't Re-predict:** Your goal is to explain *why* the ML model reached its conclusion (based on factors like contract type, tenure, and internet service) and provide solutions. Do not downplay a risk simply because the probability score seems low numerically (e.g., 25% is a serious threat).
+3. **Be Actionable:** Recommend specific, data-driven retention strategies (discounts, contract upgrades).
 
-Always be professional, specific, and data-driven. Reference the customer's actual data in your analysis.
-Format your responses clearly with sections and bullet points."""
+Always be professional and reference the specific customer data. Format responses with clear sections and bullet points."""
 
 
 # ── Node Functions ─────────────────────────────────────────────────────────
@@ -45,29 +43,24 @@ def analyze_risk(state: AgentState) -> dict:
     if not profile:
         return {"risk_summary": None, "needs_rag": False}
 
-    analysis_prompt = f"""Analyze this telecom customer's churn risk profile and identify the key factors driving their likelihood to leave:
+    analysis_prompt = f"""Analyze this telecom customer's churn risk profile using the data and the Machine Learning prediction provided.
 
-- Gender: {profile.get('gender', 'N/A')}
-- Senior Citizen: {profile.get('senior_citizen', 'N/A')}
-- Partner: {profile.get('partner', 'N/A')}
-- Dependents: {profile.get('dependents', 'N/A')}
-- Tenure: {profile.get('tenure', 'N/A')} months
-- Phone Service: {profile.get('phone_service', 'N/A')}
-- Internet Service: {profile.get('internet_service', 'N/A')}
-- Online Security: {profile.get('online_security', 'N/A')}
-- Online Backup: {profile.get('online_backup', 'N/A')}
-- Tech Support: {profile.get('tech_support', 'N/A')}
-- Contract: {profile.get('contract', 'N/A')}
-- Paperless Billing: {profile.get('paperless_billing', 'N/A')}
-- Payment Method: {profile.get('payment_method', 'N/A')}
-- Monthly Charges: ${profile.get('monthly_charges', 'N/A')}
-- ML Churn Probability: {profile.get('churn_probability', 'N/A')}
+**ML Prediction Result:**
+- Churn Probability: {profile.get('churn_probability', 'N/A')}
 - Risk Level: {profile.get('risk_level', 'N/A')}
 
-Provide a concise risk summary with:
-1. The top 3 churn risk factors for this specific customer
-2. Key data points that support each risk factor
-3. Overall risk assessment"""
+**Customer Data:**
+- Tenure: {profile.get('tenure', 'N/A')} months
+- Contract: {profile.get('contract', 'N/A')}
+- Internet Service: {profile.get('internet_service', 'N/A')}
+- Monthly Charges: ${profile.get('monthly_charges', 'N/A')}
+- Tech Support: {profile.get('tech_support', 'N/A')}
+- Payment Method: {profile.get('payment_method', 'N/A')}
+
+**Instructions:**
+1. Provide a concise risk summary that aligns **exactly** with the ML risk level ({profile.get('risk_level', 'N/A')}).
+2. Identify the top 3 features (from the data above) that likely influenced the ML model's prediction.
+3. Keep the summary under 150 words."""
 
     response = llm.invoke([
         SystemMessage(content=SYSTEM_PROMPT),
@@ -108,7 +101,7 @@ def retrieve_strategies(state: AgentState) -> dict:
 
         query = " ".join(query_parts)
         docs = retriever.invoke(query)
-        sources = [doc.page_content for doc in docs[:5]]
+        sources = [doc.page_content for doc in docs[:3]]
     except Exception as e:
         logger.error(f"⚠️ RAG retrieval failed: {e}")
         sources = [
@@ -154,7 +147,9 @@ Create a structured retention plan with:
 - **Priority Actions** (numbered, with expected impact)
 - **Recommended Offers** (specific discounts/upgrades with amounts)
 - **Sample CS Script** (what the rep should say to the customer)
-- **Follow-up Plan** (what to do after initial contact)"""
+- **Follow-up Plan**
+
+Be extremely concise. Total response must be under 250 words. Focus on actionable steps over explanation. """
 
     response = llm.invoke([
         SystemMessage(content=SYSTEM_PROMPT),
@@ -203,8 +198,11 @@ def respond_to_user(state: AgentState) -> dict:
     if context:
         system_with_context += f"\n\n--- CURRENT CUSTOMER CONTEXT ---\n{context}"
 
+    # Trim history to stay within token limits (e.g., last 4 messages = 2 turns)
+    trimmed_messages = messages[-4:] if len(messages) > 4 else messages
+
     response = llm.invoke(
-        [SystemMessage(content=system_with_context)] + messages
+        [SystemMessage(content=system_with_context)] + trimmed_messages
     )
 
     return {"messages": [response]}

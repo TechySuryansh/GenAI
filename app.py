@@ -120,6 +120,19 @@ except Exception as e:
     st.error(f"⚠️ Error loading models: {e}")
     st.stop()
 
+def calibrate_probability(prob, risk):
+    """Map raw probability to intuitive percentage ranges for UI consistency."""
+    if risk == "HIGH":
+        # Ensure HIGH risk always looks high (75-99%)
+        score = 0.75 + (min(prob, 0.5) * 0.4) 
+    elif risk == "MEDIUM":
+        # Ensure MEDIUM risk looks significant (40-70%)
+        score = 0.40 + (min(prob, 0.3) * 1.0)
+    else:
+        score = prob
+    return min(score, 0.99)
+
+
 # ── Session State ──────────────────────────────────────────────────────────
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
@@ -248,17 +261,8 @@ with tab_predict:
             else: 
                 risk, risk_class = "LOW", "risk-low"
 
-            # UI Calibration: Map risk level to intuitive percentage ranges for the dashboard
-            if risk == "HIGH":
-                # Ensure HIGH risk always looks high (75-99%)
-                display_score = 0.75 + (min(prob, 0.5) * 0.4) 
-            elif risk == "MEDIUM":
-                # Ensure MEDIUM risk looks significant (40-70%)
-                display_score = 0.40 + (min(prob, 0.3) * 1.0)
-            else:
-                display_score = prob
-            
-            display_score = min(display_score, 0.99)
+            # UI Calibration: Map risk level to intuitive percentage ranges for consistency
+            display_score = calibrate_probability(prob, risk)
 
             # Save customer profile (we keep the raw prob for the AI agent's analysis)
             st.session_state.customer_profile = {
@@ -271,7 +275,9 @@ with tab_predict:
                 "streaming_tv": tv, "streaming_movies": movies,
                 "contract": contract, "paperless_billing": paperless,
                 "payment_method": payment, "monthly_charges": monthly,
-                "churn_probability": prob, "risk_level": risk,
+                "churn_probability": prob, 
+                "display_probability": display_score,
+                "risk_level": risk,
             }
             # Reset agent outputs for new prediction
             st.session_state.risk_summary = None
@@ -314,7 +320,7 @@ with tab_agent:
         p = st.session_state.customer_profile
         st.markdown(
             f"**Current Customer:** Risk = `{p['risk_level']}` | "
-            f"Churn Prob = `{p['churn_probability']*100:.1f}%` | "
+            f"Churn Prob = `{p['display_probability']*100:.1f}%` | "
             f"Contract = `{p['contract']}` | "
             f"Monthly = `${p['monthly_charges']:.2f}`"
         )
@@ -403,7 +409,7 @@ with tab_chat:
         p = st.session_state.customer_profile
         st.markdown(
             f"*Active customer — Risk: **{p['risk_level']}** | "
-            f"Churn: **{p['churn_probability']*100:.1f}%** | "
+            f"Churn: **{p['display_probability']*100:.1f}%** | "
             f"Contract: **{p['contract']}***"
         )
     else:
