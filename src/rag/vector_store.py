@@ -2,6 +2,7 @@
 Vector store setup and retrieval for the Study Coach RAG pipeline.
 Uses ChromaDB with sentence-transformers embeddings.
 """
+
 import os
 import logging
 from langchain_community.vectorstores import Chroma

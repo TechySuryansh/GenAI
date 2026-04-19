@@ -2,6 +2,7 @@
 ChurnGuard AI — Streamlit Application
 Customer Churn Prediction Dashboard + Agentic AI Retention Strategy Assistant.
 """
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -24,6 +25,7 @@ SRC_PATH = os.path.join(BASE_DIR, "src")
 sys.path.insert(0, SRC_PATH)
 
 from dotenv import load_dotenv
+
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 from preprocess import preprocess_data
@@ -38,7 +40,8 @@ st.set_page_config(
 )
 
 # ── Custom Styling ─────────────────────────────────────────────────────────
-st.markdown("""
+st.markdown(
+    """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     .main { background-color: #0e1117; }
@@ -94,7 +97,9 @@ st.markdown("""
         background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 10px;
     }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 
 # ── Load ML Artifacts ──────────────────────────────────────────────────────
@@ -120,11 +125,12 @@ except Exception as e:
     st.error(f"⚠️ Error loading models: {e}")
     st.stop()
 
+
 def calibrate_probability(prob, risk):
     """Map raw probability to intuitive percentage ranges for UI consistency."""
     if risk == "HIGH":
         # Ensure HIGH risk always looks high (75-99%)
-        score = 0.75 + (min(prob, 0.5) * 0.4) 
+        score = 0.75 + (min(prob, 0.5) * 0.4)
     elif risk == "MEDIUM":
         # Ensure MEDIUM risk looks significant (40-70%)
         score = 0.40 + (min(prob, 0.3) * 1.0)
@@ -159,7 +165,11 @@ with st.sidebar:
         "Prediction Model",
         ["Logistic Regression", "Decision Tree"],
     )
-    model_id = "logistic_regression" if selected_model_key == "Logistic Regression" else "decision_tree"
+    model_id = (
+        "logistic_regression"
+        if selected_model_key == "Logistic Regression"
+        else "decision_tree"
+    )
     current_model = models["lr"] if model_id == "logistic_regression" else models["dt"]
 
     m = metrics[model_id]
@@ -185,9 +195,14 @@ with st.sidebar:
 st.markdown("# 🛡️ ChurnGuard AI")
 st.markdown("*Predict churn • Analyze risk • Generate retention strategies with AI*")
 
-tab_predict, tab_agent, tab_chat, tab_performance = st.tabs([
-    "🎯 Predict Churn", "🤖 AI Retention Strategy", "💬 Chat with Agent", "📈 Model Performance"
-])
+tab_predict, tab_agent, tab_chat, tab_performance = st.tabs(
+    [
+        "🎯 Predict Churn",
+        "🤖 AI Retention Strategy",
+        "💬 Chat with Agent",
+        "📈 Model Performance",
+    ]
+)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -197,7 +212,10 @@ with tab_predict:
     col1, col2 = st.columns([1, 2])
 
     with col1:
-        st.markdown('<div class="section-header"><strong>👤 Customer Profile</strong></div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-header"><strong>👤 Customer Profile</strong></div>',
+            unsafe_allow_html=True,
+        )
         with st.expander("Demographics", expanded=True):
             gender = st.selectbox("Gender", ["Male", "Female"])
             senior = st.selectbox("Senior Citizen", ["No", "Yes"])
@@ -208,57 +226,88 @@ with tab_predict:
             phone = st.selectbox("Phone Service", ["No", "Yes"])
             multiple = st.selectbox("Multiple Lines", ["No", "Yes", "No phone service"])
             internet = st.selectbox("Internet Service", ["DSL", "Fiber optic", "No"])
-            security = st.selectbox("Online Security", ["No", "Yes", "No internet service"])
+            security = st.selectbox(
+                "Online Security", ["No", "Yes", "No internet service"]
+            )
             backup = st.selectbox("Online Backup", ["No", "Yes", "No internet service"])
-            protection = st.selectbox("Device Protection", ["No", "Yes", "No internet service"])
+            protection = st.selectbox(
+                "Device Protection", ["No", "Yes", "No internet service"]
+            )
             support = st.selectbox("Tech Support", ["No", "Yes", "No internet service"])
             tv = st.selectbox("Streaming TV", ["No", "Yes", "No internet service"])
-            movies = st.selectbox("Streaming Movies", ["No", "Yes", "No internet service"])
+            movies = st.selectbox(
+                "Streaming Movies", ["No", "Yes", "No internet service"]
+            )
         with st.expander("Billing & Contract"):
-            contract = st.selectbox("Contract", ["Month-to-month", "One year", "Two year"])
+            contract = st.selectbox(
+                "Contract", ["Month-to-month", "One year", "Two year"]
+            )
             paperless = st.selectbox("Paperless Billing", ["No", "Yes"])
-            payment = st.selectbox("Payment Method", [
-                "Electronic check", "Mailed check",
-                "Bank transfer (automatic)", "Credit card (automatic)"
-            ])
+            payment = st.selectbox(
+                "Payment Method",
+                [
+                    "Electronic check",
+                    "Mailed check",
+                    "Bank transfer (automatic)",
+                    "Credit card (automatic)",
+                ],
+            )
             monthly = st.number_input("Monthly Charges ($)", 18.0, 120.0, 70.0)
 
-        predict_clicked = st.button("🔍 Predict Churn & Analyze", use_container_width=True)
+        predict_clicked = st.button(
+            "🔍 Predict Churn & Analyze", use_container_width=True
+        )
 
     with col2:
-        st.markdown('<div class="section-header"><strong>🎯 Prediction Results</strong></div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="section-header"><strong>🎯 Prediction Results</strong></div>',
+            unsafe_allow_html=True,
+        )
 
         if predict_clicked:
             input_data = {
-                'gender': gender, 'SeniorCitizen': 1 if senior == "Yes" else 0,
-                'Partner': partner, 'Dependents': dependents, 'tenure': tenure,
-                'PhoneService': phone, 'MultipleLines': multiple, 'InternetService': internet,
-                'OnlineSecurity': security, 'OnlineBackup': backup, 'DeviceProtection': protection,
-                'TechSupport': support, 'StreamingTV': tv, 'StreamingMovies': movies,
-                'Contract': contract, 'PaperlessBilling': paperless, 'PaymentMethod': payment,
-                'MonthlyCharges': monthly,
+                "gender": gender,
+                "SeniorCitizen": 1 if senior == "Yes" else 0,
+                "Partner": partner,
+                "Dependents": dependents,
+                "tenure": tenure,
+                "PhoneService": phone,
+                "MultipleLines": multiple,
+                "InternetService": internet,
+                "OnlineSecurity": security,
+                "OnlineBackup": backup,
+                "DeviceProtection": protection,
+                "TechSupport": support,
+                "StreamingTV": tv,
+                "StreamingMovies": movies,
+                "Contract": contract,
+                "PaperlessBilling": paperless,
+                "PaymentMethod": payment,
+                "MonthlyCharges": monthly,
             }
             input_df = pd.DataFrame([input_data])
-            processed_input = preprocess_data(input_df, is_training=False, scaler=scaler, feature_cols=feature_names)
+            processed_input = preprocess_data(
+                input_df, is_training=False, scaler=scaler, feature_cols=feature_names
+            )
 
             prob = float(current_model.predict_proba(processed_input)[0, 1])
 
             # Risk thresholds (Lowered for sensitivity; also includes tenure-based heuristic)
             if model_id == "logistic_regression":
-                high_thresh = 0.22 # Lowered from 0.28
+                high_thresh = 0.22  # Lowered from 0.28
                 med_thresh = 0.18  # Lowered from 0.20
             else:
-                high_thresh = 0.30 # Lowered from 0.40
+                high_thresh = 0.30  # Lowered from 0.40
                 med_thresh = 0.20
 
             # Heuristic: Short tenure (<= 6 months) is high risk if there's any significant signal
             if tenure <= 6 and prob > 0.15:
                 risk, risk_class = "HIGH", "risk-high"
-            elif prob > high_thresh: 
+            elif prob > high_thresh:
                 risk, risk_class = "HIGH", "risk-high"
-            elif prob > med_thresh: 
+            elif prob > med_thresh:
                 risk, risk_class = "MEDIUM", "risk-medium"
-            else: 
+            else:
                 risk, risk_class = "LOW", "risk-low"
 
             # UI Calibration: Map risk level to intuitive percentage ranges for consistency
@@ -266,16 +315,25 @@ with tab_predict:
 
             # Save customer profile (we keep the raw prob for the AI agent's analysis)
             st.session_state.customer_profile = {
-                "gender": gender, "senior_citizen": senior,
-                "partner": partner, "dependents": dependents,
-                "tenure": tenure, "phone_service": phone,
-                "multiple_lines": multiple, "internet_service": internet,
-                "online_security": security, "online_backup": backup,
-                "device_protection": protection, "tech_support": support,
-                "streaming_tv": tv, "streaming_movies": movies,
-                "contract": contract, "paperless_billing": paperless,
-                "payment_method": payment, "monthly_charges": monthly,
-                "churn_probability": prob, 
+                "gender": gender,
+                "senior_citizen": senior,
+                "partner": partner,
+                "dependents": dependents,
+                "tenure": tenure,
+                "phone_service": phone,
+                "multiple_lines": multiple,
+                "internet_service": internet,
+                "online_security": security,
+                "online_backup": backup,
+                "device_protection": protection,
+                "tech_support": support,
+                "streaming_tv": tv,
+                "streaming_movies": movies,
+                "contract": contract,
+                "paperless_billing": paperless,
+                "payment_method": payment,
+                "monthly_charges": monthly,
+                "churn_probability": prob,
                 "display_probability": display_score,
                 "risk_level": risk,
             }
@@ -289,33 +347,52 @@ with tab_predict:
             r1, r2 = st.columns(2)
             r1.metric("Churn Probability", f"{display_score*100:.1f}%")
             r2.markdown(f"**Risk Level:**")
-            r2.markdown(f'<span class="{risk_class}">{risk}</span>', unsafe_allow_html=True)
+            r2.markdown(
+                f'<span class="{risk_class}">{risk}</span>', unsafe_allow_html=True
+            )
             st.progress(display_score)
 
             st.markdown("---")
             st.subheader("Insights & Actions")
             if risk == "HIGH":
-                st.warning("🚨 **Retention Alert:** This customer is highly likely to churn.")
-                st.info("Suggested Actions:\n- Provide a personalized loyalty discount.\n- Offer a multi-year contract extension.\n- Conduct a proactive service quality check.")
-                st.success("💡 Go to **🤖 AI Retention Strategy** tab for a detailed, AI-generated retention plan!")
+                st.warning(
+                    "🚨 **Retention Alert:** This customer is highly likely to churn."
+                )
+                st.info(
+                    "Suggested Actions:\n- Provide a personalized loyalty discount.\n- Offer a multi-year contract extension.\n- Conduct a proactive service quality check."
+                )
+                st.success(
+                    "💡 Go to **🤖 AI Retention Strategy** tab for a detailed, AI-generated retention plan!"
+                )
             elif risk == "MEDIUM":
                 st.info("⚠️ **Caution:** This customer shows signs of potential churn.")
-                st.write("Suggested Actions:\n- Send a promotional retention offer.\n- Engage customer with a satisfaction survey.\n- Suggest beneficial service upgrades.")
+                st.write(
+                    "Suggested Actions:\n- Send a promotional retention offer.\n- Engage customer with a satisfaction survey.\n- Suggest beneficial service upgrades."
+                )
             else:
                 st.success("✅ **Loyalty Confirmed:** Customer is unlikely to churn.")
-                st.write("Suggested Actions:\n- Upsell premium value-added services.\n- Enroll in loyalty rewards program.")
+                st.write(
+                    "Suggested Actions:\n- Upsell premium value-added services.\n- Enroll in loyalty rewards program."
+                )
         else:
-            st.info("👈 Fill in the customer profile and click **Predict Churn & Analyze** to see results.")
+            st.info(
+                "👈 Fill in the customer profile and click **Predict Churn & Analyze** to see results."
+            )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # TAB 2: AI RETENTION STRATEGY (Milestone 2 — Agent)
 # ═══════════════════════════════════════════════════════════════════════════
 with tab_agent:
-    st.markdown('<div class="section-header"><strong>🤖 AI Retention Strategy Assistant</strong></div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-header"><strong>🤖 AI Retention Strategy Assistant</strong></div>',
+        unsafe_allow_html=True,
+    )
 
     if st.session_state.customer_profile is None:
-        st.info("📋 Please predict a customer's churn first in the **🎯 Predict Churn** tab, then come here for an AI-generated retention plan.")
+        st.info(
+            "📋 Please predict a customer's churn first in the **🎯 Predict Churn** tab, then come here for an AI-generated retention plan."
+        )
     else:
         p = st.session_state.customer_profile
         st.markdown(
@@ -328,24 +405,32 @@ with tab_agent:
 
         if st.session_state.risk_summary is None:
             if st.button("🧠 Generate AI Retention Strategy", use_container_width=True):
-                with st.spinner("🤖 AI Agent is analyzing the customer and generating a retention plan..."):
+                with st.spinner(
+                    "🤖 AI Agent is analyzing the customer and generating a retention plan..."
+                ):
                     try:
                         from agent.graph import retention_agent
                         from langchain_core.messages import HumanMessage
 
-                        config = {"configurable": {"thread_id": st.session_state.session_id}}
+                        config = {
+                            "configurable": {"thread_id": st.session_state.session_id}
+                        }
                         result = retention_agent.invoke(
                             {
-                                "messages": [HumanMessage(
-                                    content="Analyze this customer's churn risk and create a retention strategy."
-                                )],
+                                "messages": [
+                                    HumanMessage(
+                                        content="Analyze this customer's churn risk and create a retention strategy."
+                                    )
+                                ],
                                 "customer_profile": st.session_state.customer_profile,
                             },
                             config=config,
                         )
 
                         st.session_state.risk_summary = result.get("risk_summary", "")
-                        st.session_state.recommendations = result.get("recommendations", "")
+                        st.session_state.recommendations = result.get(
+                            "recommendations", ""
+                        )
                         st.session_state.sources = result.get("sources", [])
                         st.session_state.disclaimer = result.get("disclaimer", "")
                         st.rerun()
@@ -403,7 +488,10 @@ with tab_agent:
 # TAB 3: CHAT WITH AGENT
 # ═══════════════════════════════════════════════════════════════════════════
 with tab_chat:
-    st.markdown('<div class="section-header"><strong>💬 Chat with the Retention Agent</strong></div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-header"><strong>💬 Chat with the Retention Agent</strong></div>',
+        unsafe_allow_html=True,
+    )
 
     if st.session_state.customer_profile:
         p = st.session_state.customer_profile
@@ -413,7 +501,9 @@ with tab_chat:
             f"Contract: **{p['contract']}***"
         )
     else:
-        st.caption("💡 Tip: Predict a customer's churn first to give the agent context.")
+        st.caption(
+            "💡 Tip: Predict a customer's churn first to give the agent context."
+        )
 
     for msg in st.session_state.chat_history:
         with st.chat_message(msg["role"]):
@@ -432,7 +522,11 @@ with tab_chat:
                     from agent.graph import retention_agent
                     from langchain_core.messages import HumanMessage
 
-                    config = {"configurable": {"thread_id": st.session_state.session_id + "_chat"}}
+                    config = {
+                        "configurable": {
+                            "thread_id": st.session_state.session_id + "_chat"
+                        }
+                    }
                     result = retention_agent.invoke(
                         {
                             "messages": [HumanMessage(content=user_input)],
@@ -449,14 +543,19 @@ with tab_chat:
                         "Please check that your Groq API key is set in `.env`."
                     )
             st.markdown(response_msg)
-            st.session_state.chat_history.append({"role": "assistant", "content": response_msg})
+            st.session_state.chat_history.append(
+                {"role": "assistant", "content": response_msg}
+            )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
 # TAB 4: MODEL PERFORMANCE
 # ═══════════════════════════════════════════════════════════════════════════
 with tab_performance:
-    st.markdown('<div class="section-header"><strong>📈 Model Performance Dashboard</strong></div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-header"><strong>📈 Model Performance Dashboard</strong></div>',
+        unsafe_allow_html=True,
+    )
 
     st.subheader(f"Performance Metrics: {selected_model_key}")
     m = metrics[model_id]

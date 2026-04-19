@@ -19,6 +19,11 @@ python-dotenv
 # RAG
 chromadb
 sentence-transformers
+torch
+torchvision
 
 # PDF Export
 fpdf2
+
+# Dev Tools
+black
