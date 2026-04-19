@@ -14,8 +14,11 @@ os.chdir(project_root)
 with open(os.path.join(project_root, "app.py"), "rb") as f:
     code = compile(f.read(), "app.py", "exec")
     # Explicitly set __file__ so app.py correctly determines BASE_DIR
-    exec(code, {
-        "__file__": os.path.join(project_root, "app.py"),
-        "__name__": "__main__",
-        **globals()
-    })
+    exec(
+        code,
+        {
+            "__file__": os.path.join(project_root, "app.py"),
+            "__name__": "__main__",
+            **globals(),
+        },
+    )

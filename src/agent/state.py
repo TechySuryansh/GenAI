@@ -2,12 +2,14 @@
 State schema for the Agentic AI Retention Strategy Assistant.
 Defines the shared state passed between LangGraph nodes.
 """
+
 from typing import TypedDict, List, Optional, Annotated
 from langgraph.graph.message import add_messages
 
 
 class CustomerProfile(TypedDict, total=False):
     """Structured customer information from ML prediction."""
+
     gender: str
     senior_citizen: bool
     partner: str
@@ -32,6 +34,7 @@ class CustomerProfile(TypedDict, total=False):
 
 class AgentState(TypedDict, total=False):
     """The state that flows through the LangGraph retention workflow."""
+
     # Conversation
     messages: Annotated[list, add_messages]
 
